@@ -1,4 +1,4 @@
-name: Bursa Market Scanner — Nota Saham Alert V4
+name: Bursa Market Scanner — Saham Alert
 
 on:
   schedule:
