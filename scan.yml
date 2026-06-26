@@ -1,0 +1,49 @@
+name: Bursa Market Scanner — Nota Saham Alert V4
+
+on:
+  schedule:
+    # ── Bursa trading hours: Mon–Fri 9:00am–5:00pm MYT (UTC+8) ──────────────
+    # GitHub cron uses UTC. MYT = UTC+8, so 9am MYT = 1am UTC, 5pm MYT = 9am UTC.
+    # Runs every 30 minutes during market hours on weekdays.
+    - cron: '0,30 1-9 * * 1-5'   # every 30 min, 9am–5:30pm MYT Mon–Fri
+
+  # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual run (optional)'
+        required: false
+        default: 'Manual test'
+
+jobs:
+  scan:
+    name: Scan Bursa Malaysia
+    runs-on: ubuntu-latest
+    timeout-minutes: 30    # cancel if scan takes too long
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'           # cache pip installs between runs
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run market scanner
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID:   ${{ secrets.CHAT_ID }}
+        run: python scanner.py
+
+      - name: Upload scan log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-log-${{ github.run_id }}
+          path: '*.log'
+          retention-days: 7
