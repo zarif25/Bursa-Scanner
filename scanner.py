@@ -112,7 +112,11 @@ def get_bursa_tickers() -> list[tuple[str, str]]:
         resp.raise_for_status()
         data    = resp.json()
         stocks  = [
-            (f"{item['code']}.KL", item.get("stock_name", item.get("name", "")).strip())
+            (
+                f"{item['code']}.KL",
+                # KLSEScreener returns the trading symbol in 'stock_name' or 'symbol' field
+                (item.get("stock_name") or item.get("symbol") or item.get("name") or "").strip().split()[0]
+            )
             for item in data.get("data", []) if item.get("code")
         ]
         if stocks:
@@ -154,6 +158,16 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
     Returns a result dict if any signals triggered, else None.
     """
     try:
+        # Resolve stock short name from yfinance if not supplied by screener
+        if not name:
+            try:
+                info = yf.Ticker(ticker).info
+                # shortName e.g. "TOPGLOV CORP BHD" → take first word as symbol
+                raw  = info.get("shortName", "") or info.get("symbol", "")
+                name = raw.split()[0] if raw else ticker.replace(".KL", "")
+            except Exception:
+                name = ticker.replace(".KL", "")
+
         df = yf.download(
             ticker,
             period="2y",
