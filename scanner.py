@@ -71,29 +71,30 @@ def send_telegram(message: str) -> bool:
         return False
 
 
-def format_alert(ticker: str, price: float, signals: list[str]) -> str:
-    """Build the Telegram message in Nota Saham Alert V4 style."""
-    sym      = ticker.replace(".KL", "")
-    tv_sym   = f"MYX:{sym}"
-    chart    = f"https://my.tradingview.com/chart/?symbol={tv_sym}"
+def format_alert(ticker: str, price: float, signals: list[str], name: str = "") -> str:
+    """Build the Telegram message matching exact Saham Alert style."""
+    code     = ticker.replace(".KL", "")
+    # Use stock name for MYX: URL (e.g. MYX:KOBAY), else fall back to numeric code
+    tv_label = name if name else code
+    chart    = f"https://my.tradingview.com/chart/?symbol=MYX:{tv_label}"
     sigs_txt = "\n".join(signals)
     divider  = "─" * 36
 
     return (
-        f"<b>Nota Saham Alert V4</b>\n"
-        f"{sym} : {price:.3f}\n\n"
+        f"<b>Saham Alert</b>\n"
+        f"{tv_label} : {price:.3f}\n"
         f"{sigs_txt}\n"
-        f"{divider}\n\n"
+        f"{divider}\n"
         f"Chart Link :\n"
-        f'<a href="{chart}">{chart}</a>\n\n'
-        f"<b>Nota Saham Alert V4</b>"
+        f'<a href="{chart}">{chart}</a>'
     )
 
 
 # ── Stock list ──────────────────────────────────────────────────────────────────
-def get_bursa_tickers() -> list[str]:
+def get_bursa_tickers() -> list[tuple[str, str]]:
     """
     Fetch all Bursa Malaysia tickers from KLSEScreener.
+    Returns list of (ticker, stock_name) tuples e.g. ("0023.KL", "KOBAY").
     Falls back to a hardcoded starter list if the request fails.
     """
     try:
@@ -110,42 +111,44 @@ def get_bursa_tickers() -> list[str]:
         resp = requests.get(url, params=params, headers=headers, timeout=30)
         resp.raise_for_status()
         data    = resp.json()
-        tickers = [f"{item['code']}.KL" for item in data.get("data", []) if item.get("code")]
-        if tickers:
-            log.info(f"Fetched {len(tickers)} tickers from KLSEScreener")
-            return tickers
+        stocks  = [
+            (f"{item['code']}.KL", item.get("stock_name", item.get("name", "")).strip())
+            for item in data.get("data", []) if item.get("code")
+        ]
+        if stocks:
+            log.info(f"Fetched {len(stocks)} tickers from KLSEScreener")
+            return stocks
     except Exception as e:
         log.warning(f"KLSEScreener fetch failed: {e} — using fallback list")
 
-    # Fallback: top Bursa stocks by market cap (edit as needed)
+    # Fallback: top Bursa stocks (ticker, name)
     fallback = [
-        "1155.KL",  # Maybank
-        "1295.KL",  # Public Bank
-        "1023.KL",  # CIMB
-        "5183.KL",  # Petronas Chemicals
-        "6888.KL",  # Axiata
-        "4863.KL",  # Telekom Malaysia
-        "6947.KL",  # Maxis
-        "5347.KL",  # Tenaga Nasional
-        "3816.KL",  # MISC
-        "2445.KL",  # Sime Darby
-        "4197.KL",  # Sime Darby Plantation
-        "5285.KL",  # IHH Healthcare
-        "7277.KL",  # Dialog Group
-        "5168.KL",  # Hartalega
-        "7113.KL",  # Kossan Rubber
-        "5110.KL",  # Supercomnet
-        "0023.KL",  # KOBAY
-        "0007.KL",  # LACMED
-        "5285.KL",  # MCLEAN (use actual code)
-        "0166.KL",  # TOPGLOV
+        ("1155.KL", "MAYBANK"),
+        ("1295.KL", "PBBANK"),
+        ("1023.KL", "CIMB"),
+        ("5183.KL", "PCHEM"),
+        ("6888.KL", "AXIATA"),
+        ("4863.KL", "TM"),
+        ("6947.KL", "MAXIS"),
+        ("5347.KL", "TENAGA"),
+        ("3816.KL", "MISC"),
+        ("2445.KL", "SIME"),
+        ("4197.KL", "SIMEPLT"),
+        ("5285.KL", "IHH"),
+        ("7277.KL", "DIALOG"),
+        ("5168.KL", "HARTA"),
+        ("7113.KL", "KOSSAN"),
+        ("5110.KL", "SUPERCOMNET"),
+        ("0023.KL", "KOBAY"),
+        ("0007.KL", "LACMED"),
+        ("0166.KL", "TOPGLOV"),
     ]
     log.info(f"Using fallback list of {len(fallback)} tickers")
     return fallback
 
 
 # ── Signal detection ───────────────────────────────────────────────────────────
-def analyze(ticker: str) -> Optional[dict]:
+def analyze(ticker: str, name: str = "") -> Optional[dict]:
     """
     Download 2 years of daily OHLCV data and check all signal conditions.
     Returns a result dict if any signals triggered, else None.
@@ -199,7 +202,15 @@ def analyze(ticker: str) -> Optional[dict]:
         # All-time high (full history)
         ath = float(high.max())
 
-        signals = []
+        # Yesterday's close
+        prev_close = float(close.iloc[-2])
+
+        # ── Gate: only proceed if price is UP vs yesterday ────────────────────
+        if current_price <= prev_close:
+            return None
+
+        pct_chg = (current_price - prev_close) / prev_close * 100
+        signals = [f"📈 Price Up (+{pct_chg:.2f}% vs yesterday)"]
 
         # ── Golden Cross ──────────────────────────────────────────────────────
         if ma50_now > ma200_now and ma50_prev <= ma200_prev:
@@ -225,11 +236,9 @@ def analyze(ticker: str) -> Optional[dict]:
         if avg_vol > 0 and current_volume >= avg_vol * VOLUME_SURGE_MULT:
             signals.append("📈 Volume Surge")
 
-        if not signals:
-            return None
-
         return {
             "ticker":  ticker,
+            "name":    name,
             "price":   current_price,
             "signals": signals,
         }
@@ -246,18 +255,18 @@ def run_scan():
     log.info(f"Bursa Scanner starting at {start.strftime('%Y-%m-%d %H:%M MYT')}")
     log.info("=" * 60)
 
-    tickers = get_bursa_tickers()
-    log.info(f"Scanning {len(tickers)} stocks with {MAX_WORKERS} threads…")
+    stocks = get_bursa_tickers()
+    log.info(f"Scanning {len(stocks)} stocks with {MAX_WORKERS} threads…")
 
     results = []
     done = 0
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = {executor.submit(analyze, t): t for t in tickers}
+        futures = {executor.submit(analyze, ticker, name): (ticker, name) for ticker, name in stocks}
         for future in as_completed(futures):
             done += 1
             if done % 100 == 0:
-                log.info(f"  Progress: {done}/{len(tickers)}")
+                log.info(f"  Progress: {done}/{len(stocks)}")
             result = future.result()
             if result:
                 results.append(result)
@@ -271,9 +280,9 @@ def run_scan():
 
     # Send summary header
     summary = (
-        f"<b>🔍 Nota Saham Alert V4 — Market Scan</b>\n"
+        f"<b>🔍 Saham Alert — Market Scan</b>\n"
         f"{datetime.now().strftime('%d %b %Y  %H:%M MYT')}\n"
-        f"Scanned: {len(tickers)} stocks\n"
+        f"Scanned: {len(stocks)} stocks\n"
         f"Signals found: {len(results)}\n"
         f"{'─' * 36}"
     )
@@ -282,8 +291,8 @@ def run_scan():
 
     # Send individual alerts
     for r in results:
-        msg = format_alert(r["ticker"], r["price"], r["signals"])
-        log.info(f"  ALERT: {r['ticker']} — {', '.join(r['signals'])}")
+        msg = format_alert(r["ticker"], r["price"], r["signals"], r.get("name", ""))
+        log.info(f"  ALERT: {r['ticker']} ({r.get('name','')}) — {', '.join(r['signals'])}")
         send_telegram(msg)
         time.sleep(DELAY_BETWEEN_MSGS)
 
