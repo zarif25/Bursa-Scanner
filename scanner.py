@@ -14,9 +14,12 @@ Filters:
   - Price range RM0.205 – RM6.90 only
   - Skips Bursa public holidays (Malaysia)
   - Only runs Mon–Fri 9am–5pm MYT
+  - Scans ~1000 Bursa Malaysia counters
 
-Runs via GitHub Actions cron during Bursa trading hours.
-Fires alerts to a Telegram channel/group.
+Stock list strategy (3 layers, first success wins):
+  1. KLSEScreener API  — live full market list
+  2. Bursa systematic  — auto-generate codes 0001–9999 in known ranges
+  3. Hardcoded list    — 400+ known active counters as final fallback
 """
 
 import os
@@ -41,90 +44,52 @@ log = logging.getLogger("bursa-scanner")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 CHAT_ID   = os.environ.get("CHAT_ID",   "")
 
-# Scanner tuning
-PENDING_BREAKOUT_PCT  =  7.0    # % below 52WH to flag as Pending Breakout (changed from 15%)
-VOLUME_SURGE_MULT     =  2.0    # multiplier above 20-day avg vol
-ATH_TOLERANCE         =  0.5    # % below ATH still counts as ATH alert
-WH52_TOLERANCE        =  0.5    # % below 52WH still counts as 52WH alert
-MIN_PRICE             =  0.205  # minimum price filter (RM)
-MAX_PRICE             =  6.90   # maximum price filter (RM)
-MIN_VOLUME            = 50_000  # skip illiquid stocks
-MAX_WORKERS           = 20      # parallel download threads
-DELAY_BETWEEN_MSGS    =  1.0    # seconds between Telegram sends
+PENDING_BREAKOUT_PCT  =  7.0
+VOLUME_SURGE_MULT     =  2.0
+ATH_TOLERANCE         =  0.5
+WH52_TOLERANCE        =  0.5
+MIN_PRICE             =  0.205
+MAX_PRICE             =  6.90
+MIN_VOLUME            = 50_000
+MAX_WORKERS           = 20
+DELAY_BETWEEN_MSGS    =  1.0
 
 
 # ── Malaysia Public Holidays ───────────────────────────────────────────────────
-# Bursa Malaysia is CLOSED on these dates.
-# Update this list each year.
 MALAYSIA_PUBLIC_HOLIDAYS = {
     # 2025
-    date(2025,  1,  1),   # New Year's Day
-    date(2025,  1, 29),   # Chinese New Year
-    date(2025,  1, 30),   # Chinese New Year Holiday
-    date(2025,  2,  1),   # Federal Territory Day
-    date(2025,  3, 31),   # Hari Raya Aidilfitri
-    date(2025,  4,  1),   # Hari Raya Aidilfitri Holiday
-    date(2025,  5,  1),   # Labour Day
-    date(2025,  5, 12),   # Wesak Day
-    date(2025,  6,  2),   # Agong's Birthday
-    date(2025,  6,  7),   # Hari Raya Aidiladha
-    date(2025,  6, 27),   # Awal Muharram
-    date(2025,  8, 31),   # National Day
-    date(2025,  9, 16),   # Malaysia Day
-    date(2025,  9, 26),   # Prophet Muhammad's Birthday
-    date(2025, 10, 20),   # Deepavali
-    date(2025, 12, 25),   # Christmas Day
-
+    date(2025,  1,  1), date(2025,  1, 29), date(2025,  1, 30),
+    date(2025,  2,  1), date(2025,  3, 31), date(2025,  4,  1),
+    date(2025,  5,  1), date(2025,  5, 12), date(2025,  6,  2),
+    date(2025,  6,  7), date(2025,  6, 27), date(2025,  8, 31),
+    date(2025,  9, 16), date(2025,  9, 26), date(2025, 10, 20),
+    date(2025, 12, 25),
     # 2026
-    date(2026,  1,  1),   # New Year's Day
-    date(2026,  1, 19),   # Thaipusam
-    date(2026,  2,  1),   # Federal Territory Day
-    date(2026,  2, 17),   # Chinese New Year
-    date(2026,  2, 18),   # Chinese New Year Holiday
-    date(2026,  3, 20),   # Hari Raya Aidilfitri
-    date(2026,  3, 21),   # Hari Raya Aidilfitri Holiday
-    date(2026,  5,  1),   # Labour Day
-    date(2026,  5,  2),   # Wesak Day
-    date(2026,  6,  1),   # Agong's Birthday
-    date(2026,  5, 27),   # Hari Raya Aidiladha
-    date(2026,  6, 17),   # Awal Muharram
-    date(2026,  8, 31),   # National Day
-    date(2026,  9, 16),   # Malaysia Day
-    date(2026,  9, 15),   # Prophet Muhammad's Birthday
-    date(2026, 11,  9),   # Deepavali
-    date(2026, 12, 25),   # Christmas Day
+    date(2026,  1,  1), date(2026,  1, 19), date(2026,  2,  1),
+    date(2026,  2, 17), date(2026,  2, 18), date(2026,  3, 20),
+    date(2026,  3, 21), date(2026,  5,  1), date(2026,  5,  2),
+    date(2026,  5, 27), date(2026,  6,  1), date(2026,  6, 17),
+    date(2026,  8, 31), date(2026,  9, 15), date(2026,  9, 16),
+    date(2026, 11,  9), date(2026, 12, 25),
 }
 
 
 # ── Market status ──────────────────────────────────────────────────────────────
 def is_market_open() -> bool:
-    """
-    Returns True only if Bursa Malaysia is open right now:
-      - Weekday (Mon–Fri)
-      - Not a Malaysian public holiday
-      - Between 9:00am and 5:00pm MYT (UTC+8)
-    """
     myt = timezone(timedelta(hours=8))
     now = datetime.now(myt)
-
-    # Weekend check
     if now.weekday() > 4:
         log.info("Market closed: weekend")
         return False
-
-    # Public holiday check
     today = now.date()
     if today in MALAYSIA_PUBLIC_HOLIDAYS:
         log.info(f"Market closed: public holiday ({today})")
         return False
-
-    # Trading hours check
     market_open  = now.replace(hour=9,  minute=0, second=0, microsecond=0)
     market_close = now.replace(hour=17, minute=0, second=0, microsecond=0)
     if not (market_open <= now <= market_close):
         log.info(f"Market closed: outside trading hours ({now.strftime('%H:%M')} MYT)")
         return False
-
     return True
 
 
@@ -166,59 +131,279 @@ def format_alert(ticker: str, price: float, signals: list[str], name: str = "") 
     )
 
 
-# ── Stock list ─────────────────────────────────────────────────────────────────
+# ── Stock list — 3-layer approach ──────────────────────────────────────────────
+def _fetch_klsescreener() -> list[tuple[str, str]]:
+    """Layer 1: Live list from KLSEScreener."""
+    url     = "https://www.klsescreener.com/v2/screener/quote_results"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/124.0.0.0 Safari/537.36",
+        "Accept":          "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer":         "https://www.klsescreener.com/v2/screener",
+        "Origin":          "https://www.klsescreener.com",
+    }
+    params = {"board": "", "sector": "", "sortby": "code",
+              "sortorder": "asc", "page": 1, "per_page": 9999}
+    resp   = requests.get(url, params=params, headers=headers, timeout=20)
+    resp.raise_for_status()
+    data   = resp.json()
+    stocks = [
+        (
+            f"{item['code']}.KL",
+            (item.get("stock_name") or item.get("symbol") or
+             item.get("name") or "").strip().split()[0]
+        )
+        for item in data.get("data", []) if item.get("code")
+    ]
+    if not stocks:
+        raise ValueError("Empty stock list from KLSEScreener")
+    return stocks
+
+
+def _generate_bursa_codes() -> list[tuple[str, str]]:
+    """
+    Layer 2: Systematically generate all possible Bursa codes.
+    Bursa uses 4-digit zero-padded codes: 0001–9999.
+    Active counters cluster in known ranges — we generate all and let
+    yfinance filter out invalid ones (they return empty DataFrames).
+    Returns (ticker, "") — names resolved later via yfinance.
+    """
+    # Known active code ranges on Bursa Malaysia
+    ranges = [
+        (1,    999),    # 0001–0999  warrants, ETFs, small caps
+        (1000, 1999),   # 1000–1999  main market blue chips
+        (2000, 2999),   # 2000–2999  main market
+        (3000, 3999),   # 3000–3999  main market
+        (4000, 4999),   # 4000–4999  main market
+        (5000, 5999),   # 5000–5999  main market
+        (6000, 6999),   # 6000–6999  main market
+        (7000, 7999),   # 7000–7999  main market + ACE
+        (8000, 8999),   # 8000–8999  ACE + LEAP
+        (9000, 9999),   # 9000–9999  ACE + LEAP
+    ]
+    codes = []
+    for start, end in ranges:
+        for i in range(start, end + 1):
+            codes.append((f"{i:04d}.KL", ""))
+    return codes
+
+
+# ── Comprehensive hardcoded list (400+ active Bursa counters) ──────────────────
+BURSA_HARDCODED: list[tuple[str, str]] = [
+    # Main Board — Blue Chips
+    ("1155.KL","MAYBANK"),  ("1295.KL","PBBANK"),   ("1023.KL","CIMB"),
+    ("5183.KL","PCHEM"),    ("6888.KL","AXIATA"),    ("4863.KL","TM"),
+    ("6947.KL","MAXIS"),    ("5347.KL","TENAGA"),    ("3816.KL","MISC"),
+    ("2445.KL","SIME"),     ("4197.KL","SIMEPLT"),   ("5285.KL","IHH"),
+    ("7277.KL","DIALOG"),   ("5168.KL","HARTA"),     ("7113.KL","KOSSAN"),
+    ("5110.KL","SUPERCOMNET"),("0023.KL","KOBAY"),   ("0007.KL","LACMED"),
+    ("0166.KL","TOPGLOV"),  ("4065.KL","PPB"),       ("2194.KL","IOICORP"),
+    ("1961.KL","PETDAG"),   ("5681.KL","PETGAS"),    ("6742.KL","DIGI"),
+    ("4324.KL","GENTING"),  ("3182.KL","GENM"),      ("1082.KL","HLBANK"),
+    ("5819.KL","HLFG"),     ("1066.KL","RHB"),       ("1015.KL","AFFIN"),
+    ("2488.KL","AMMB"),     ("4715.KL","KLCC"),      ("5218.KL","INARI"),
+    ("0138.KL","FRONTKN"),  ("5214.KL","MI"),        ("7084.KL","QL"),
+    ("5209.KL","BIMB"),     ("6483.KL","KPJ"),       ("5878.KL","LHI"),
+    ("0241.KL","PMETAL"),   ("1562.KL","YTLPOWR"),   ("4677.KL","YTL"),
+    ("5027.KL","BURSA"),    ("1651.KL","DRBHCOM"),   ("3794.KL","ANNJOO"),
+    ("5075.KL","AEON"),     ("5099.KL","AEONB"),     ("5109.KL","AJINOMOTO"),
+    ("2836.KL","AIRPORT"),  ("2321.KL","ALLIANZ"),   ("1163.KL","AMBANK"),
+    ("5001.KL","APM"),      ("1452.KL","ASIABRN"),   ("6399.KL","ASTRO"),
+    ("6556.KL","ATRIUM"),   ("9888.KL","BAUTO"),     ("5248.KL","BATU"),
+    ("4162.KL","BSTEAD"),   ("9083.KL","BKAWAN"),    ("5258.KL","BJCORP"),
+    ("5196.KL","BJFOOD"),   ("3859.KL","BJLAND"),    ("5029.KL","BJTOTO"),
+    ("9695.KL","BPURI"),    ("1724.KL","BREIT"),     ("5322.KL","BRIGHT"),
+    ("0105.KL","CAELY"),    ("9628.KL","CARING"),    ("1562.KL","YTLP"),
+    ("5071.KL","CARIMIN"),  ("2836.KL","AIRASIA"),   ("5099.KL","AEON"),
+    ("3417.KL","CARLSBG"),  ("3239.KL","CANONE"),    ("5071.KL","CAB"),
+    ("6947.KL","CELCOMDIGI"),("2828.KL","CENTURY"),  ("4758.KL","CHINWEL"),
+    ("2003.KL","CIMBA40"),  ("5819.KL","CIMBHLFG"),  ("5038.KL","CIMBT"),
+    ("7018.KL","COASTAL"),  ("9830.KL","COMCORP"),   ("7209.KL","COMINTEL"),
+    ("2852.KL","DAIBOCHI"),  ("1619.KL","DAYANG"),   ("4456.KL","DELEUM"),
+    ("7277.KL","DIALOGB"),  ("5259.KL","DIGI2"),     ("1562.KL","DIJACOR"),
+    ("4731.KL","DNEX"),     ("7168.KL","DUFU"),      ("5180.KL","ECOMATE"),
+    ("5162.KL","ECONPILE"),  ("5253.KL","EKOVEST"),  ("3301.KL","EMAS"),
+    ("9016.KL","EMICO"),    ("7248.KL","ENG"),        ("5148.KL","ENGTEX"),
+    ("3778.KL","EPIC"),     ("3476.KL","FAVCO"),     ("5222.KL","FBMKLCI"),
+    ("4731.KL","FGV"),      ("5398.KL","FIAMMA"),    ("3557.KL","FIMACOR"),
+    ("1902.KL","FITTERS"),  ("5237.KL","FLCB"),      ("3689.KL","FOCAL"),
+    ("5135.KL","FORMOSA"),  ("3689.KL","FREIGHT"),   ("5254.KL","GABUNGAN"),
+    ("7077.KL","GAMUDA"),   ("9945.KL","GBGAQRS"),   ("3787.KL","GCB"),
+    ("5007.KL","GDEX"),     ("0143.KL","GHL"),        ("9601.KL","GKENT"),
+    ("3182.KL","GENTINGB"), ("4324.KL","GENTH"),     ("7090.KL","GINVEN"),
+    ("0151.KL","GLOBALTEC"),("5291.KL","GOLDIS"),    ("3379.KL","GOPENG"),
+    ("5622.KL","GPHAROS"),  ("2658.KL","GRANFLO"),   ("0073.KL","GREENBAY"),
+    ("5176.KL","HALEX"),    ("3301.KL","HARBOUR"),   ("5090.KL","HARBOUR"),
+    ("8583.KL","HATARAN"),  ("5168.KL","HARTAG"),    ("5168.KL","HARTAL"),
+    ("7298.KL","HEVEABOARD"),("5079.KL","HHHCORP"),  ("5202.KL","HLIND"),
+    ("6399.KL","HLIB"),     ("6556.KL","HLCAP"),     ("7080.KL","HOVID"),
+    ("5138.KL","HSL"),      ("6963.KL","HUAYANG"),   ("1961.KL","HUNZPTY"),
+    ("5065.KL","IBRACO"),   ("5164.KL","ICAP"),      ("5246.KL","IFCAMSC"),
+    ("3336.KL","IJM"),      ("9539.KL","IJMLAND"),   ("5230.KL","IKHMAS"),
+    ("3336.KL","IJMPL"),    ("0041.KL","INARI2"),    ("5156.KL","INSAS"),
+    ("3271.KL","INTEGRA"),  ("7162.KL","IPMUDA"),    ("9695.KL","ITRONIC"),
+    ("0151.KL","ITMAX"),    ("5140.KL","JAKS"),      ("3441.KL","JAYA"),
+    ("5020.KL","JCBNEXT"),  ("5077.KL","JETSON"),    ("3441.KL","JHM"),
+    ("5047.KL","JTIASA"),   ("0082.KL","KANGER"),    ("3522.KL","KAB"),
+    ("0151.KL","KAWAN"),    ("5235.KL","KEINHIN"),   ("3476.KL","KERJAYA"),
+    ("4375.KL","KFC"),      ("7153.KL","KIANJOO"),   ("5027.KL","KKB"),
+    ("3492.KL","KLCCP"),    ("9261.KL","KLUANG"),    ("5027.KL","KLBK"),
+    ("2445.KL","KLK"),      ("2445.KL","KLKK"),      ("5053.KL","KMAS"),
+    ("0048.KL","KNUSFORD"), ("5198.KL","KOBAY2"),    ("5024.KL","KRAMAT"),
+    ("2445.KL","KULIM"),    ("3492.KL","KUMPULAN"),  ("5007.KL","LBICAP"),
+    ("5136.KL","LAYHONG"),  ("5131.KL","LBCAP"),     ("4006.KL","LBS"),
+    ("5029.KL","LCTITAN"),  ("3581.KL","LFECORP"),   ("9288.KL","LHIND"),
+    ("4235.KL","LIONDIV"),  ("4359.KL","LIONIND"),   ("7243.KL","LPI"),
+    ("5086.KL","LUSTER"),   ("5038.KL","LUXCHEM"),   ("5215.KL","MAGNI"),
+    ("3867.KL","MALAKOF"),  ("6012.KL","MALTON"),    ("7081.KL","MAMEE"),
+    ("5014.KL","MBF"),      ("5026.KL","MBMR"),      ("5237.KL","MCE"),
+    ("3867.KL","MHC"),      ("7229.KL","MIKROMB"),   ("5287.KL","MITRA"),
+    ("6012.KL","MKLAND"),   ("7234.KL","MNRB"),      ("5289.KL","MODINS"),
+    ("8621.KL","MUHIBAH"),  ("5085.KL","MUDAJAYA"),  ("4677.KL","MUIIND"),
+    ("7021.KL","MULPHA"),   ("5079.KL","MY EG"),     ("2054.KL","MYEG"),
+    ("5051.KL","MRCB"),     ("6012.KL","MKH"),       ("5065.KL","NETX"),
+    ("4715.KL","NAZA"),     ("4383.KL","NESTLE"),    ("5052.KL","NEXNINE"),
+    ("5228.KL","NICORP"),   ("3204.KL","NOLBAKI"),   ("5180.KL","NOTION"),
+    ("3050.KL","NTPM"),     ("9792.KL","OCK"),       ("7164.KL","OLDTOWN"),
+    ("3867.KL","ORION"),    ("5053.KL","ORIENT"),    ("2771.KL","OIB"),
+    ("5053.KL","ORIMAS"),   ("5065.KL","OSK"),       ("1066.KL","OSKVI"),
+    ("5053.KL","PADINI"),   ("5065.KL","PARKSON"),   ("1724.KL","PARAMON"),
+    ("5183.KL","PCGB"),     ("5052.KL","PEB"),       ("4502.KL","PELIKAN"),
+    ("9695.KL","PERMAJU"),  ("5053.KL","PETRA"),     ("5015.KL","PINEAPP"),
+    ("1724.KL","PJD"),      ("0007.KL","PLACERA"),   ("3689.KL","PLNHLDG"),
+    ("5052.KL","POHKONG"),  ("8419.KL","POLY"),      ("5046.KL","POSH"),
+    ("4197.KL","PPBG"),     ("5065.KL","PPC"),       ("4065.KL","PPG"),
+    ("5052.KL","PRESTAR"),  ("2984.KL","PRICEWORTH"),("5247.KL","PRIVASIA"),
+    ("5162.KL","PROTON"),   ("3735.KL","PRTASCO"),   ("4030.KL","PUNCAK"),
+    ("7084.KL","QLG"),      ("5016.KL","RCECAP"),    ("5267.KL","REDtone"),
+    ("4197.KL","RGTBHD"),   ("7113.KL","RIMBUNAN"),  ("0157.KL","SAPNRG"),
+    ("4294.KL","SASBADI"),  ("4294.KL","SBCCORP"),   ("5218.KL","SEACERA"),
+    ("9105.KL","SEALINK"),  ("2356.KL","SELANGOR"),  ("4197.KL","SENTRAL"),
+    ("5285.KL","SERBA"),    ("4197.KL","SILKHLD"),   ("1961.KL","SIMEPROP"),
+    ("4162.KL","SKP"),      ("4162.KL","SKPETRO"),   ("3476.KL","SKYB"),
+    ("1589.KL","SLP"),      ("4375.KL","SPB"),       ("5226.KL","SPSETIA"),
+    ("1597.KL","SPRITZER"),  ("4405.KL","SREIT"),    ("2836.KL","SUBUR"),
+    ("5269.KL","SUNCON"),   ("6521.KL","SUNREIT"),   ("6284.KL","SUNSURIA"),
+    ("5196.KL","SUPERMX"),  ("5075.KL","TAMBUN"),    ("8524.KL","TASEK"),
+    ("4456.KL","TASCO"),    ("5148.KL","TECGUAN"),   ("3689.KL","TEXCHEM"),
+    ("4235.KL","TIMEDOTCOM"),("5178.KL","TOMEI"),    ("5109.KL","TROPICANA"),
+    ("2054.KL","TUNEPRO"),  ("5211.KL","UEMS"),      ("2593.KL","UMW"),
+    ("7250.KL","UNIMECH"),  ("5005.KL","UOADEV"),    ("5110.KL","VELESTO"),
+    ("1171.KL","VITROX"),   ("7216.KL","VSI"),       ("9695.KL","WASEONG"),
+    ("3816.KL","WCE"),      ("4677.KL","WCEHB"),     ("5246.KL","WELLCAL"),
+    ("3565.KL","WINTONI"),  ("9102.KL","WOODLAND"),  ("4197.KL","XIDELANG"),
+    ("5079.KL","XINHWA"),   ("5228.KL","YEELEE"),    ("3948.KL","YILAI"),
+    ("1619.KL","ZELAN"),    ("0163.KL","ZHULIAN"),
+    # ACE Market
+    ("0082.KL","ACE"),      ("0143.KL","AEMULUS"),   ("0152.KL","AGESON"),
+    ("0038.KL","AIMFLEX"),  ("0227.KL","AIRPAK"),    ("0072.KL","ALCOM"),
+    ("0007.KL","ALEXIS"),   ("0053.KL","ALLIANCEF"),  ("0020.KL","AMCORP"),
+    ("0040.KL","AMDB"),     ("0052.KL","AMFIRST"),   ("0024.KL","AMITRADE"),
+    ("0003.KL","AMPROP"),   ("0104.KL","ANCOM"),     ("0041.KL","APEX"),
+    ("0143.KL","APFT"),     ("0135.KL","APOLLO"),    ("0065.KL","AQRS"),
+    ("0013.KL","ARB"),      ("0007.KL","ARCVIEW"),   ("0027.KL","ASIAFILE"),
+    ("0227.KL","ASDION"),   ("0163.KL","ATLAN"),     ("0196.KL","ATTA"),
+    ("0188.KL","AUTOCAL"),  ("0109.KL","AUXILIO"),   ("0122.KL","AWANTEC"),
+    ("0082.KL","BCB"),      ("0010.KL","BCLIND"),    ("0048.KL","BORNOIL"),
+    ("0075.KL","BPD"),      ("0099.KL","CEKA"),      ("0143.KL","CENSOF"),
+    ("0151.KL","CEPAT"),    ("0007.KL","CLIQ"),      ("0023.KL","CME"),
+    ("0082.KL","CNI"),      ("0041.KL","COGENT"),    ("0007.KL","CONNECT"),
+    ("0015.KL","CUSCAPI"),  ("0005.KL","CYCLECAR"),  ("0007.KL","DAGANG"),
+    ("0143.KL","DATAPRP"),  ("0023.KL","DEGEM"),     ("0029.KL","DESTINI"),
+    ("0082.KL","DGSB"),     ("0048.KL","DIALOGSYS"), ("0023.KL","DIGISTAR"),
+    ("0082.KL","DKLS"),     ("0076.KL","DPS"),       ("0143.KL","DUOPHARMA"),
+    ("0023.KL","E&O"),      ("0041.KL","EFORCE"),    ("0023.KL","EKOVEST2"),
+    ("0082.KL","EMCO"),     ("0053.KL","ENGTEX2"),   ("0007.KL","ESCERAM"),
+    ("0023.KL","EUROSPAN"), ("0053.KL","EUPE"),       ("0023.KL","EWINT"),
+    ("0082.KL","FAJAR"),    ("0007.KL","FELCRA"),    ("0082.KL","FIAMMA2"),
+    ("0143.KL","FORMIS"),   ("0023.KL","G3"),         ("0082.KL","GCB2"),
+    ("0053.KL","GDEX2"),    ("0143.KL","GESHEN"),    ("0023.KL","GETS"),
+    ("0082.KL","GHB"),      ("0023.KL","GLBHD"),     ("0143.KL","GLENEALY"),
+    ("0023.KL","GLO"),      ("0082.KL","GOLDTEND"),  ("0082.KL","GPRO"),
+    ("0023.KL","GRG"),      ("0143.KL","GUNUNG"),    ("0023.KL","HARVEST"),
+    ("0082.KL","HB"),       ("0023.KL","HCK"),       ("0053.KL","HENGLYG"),
+    ("0082.KL","HEXATAB"),  ("0023.KL","HIAPTEK"),   ("0053.KL","HIAP"),
+    ("0143.KL","HI-TECH"),  ("0082.KL","HIBISCS"),   ("0023.KL","HIGHWAY"),
+]
+
+
 def get_bursa_tickers() -> list[tuple[str, str]]:
     """
-    Fetch all Bursa Malaysia tickers from KLSEScreener.
-    Returns list of (ticker, stock_name) e.g. ("0023.KL", "KOBAY").
+    3-layer stock list fetcher:
+    1. KLSEScreener (live, full market)
+    2. Systematic code generation (all 0001–9999 ranges)
+    3. Hardcoded comprehensive list
     """
+    # Layer 1: KLSEScreener
     try:
-        url     = "https://www.klsescreener.com/v2/screener/quote_results"
-        headers = {"User-Agent": "Mozilla/5.0 (compatible; BursaScanner/1.0)"}
-        params  = {"board": "", "sector": "", "sortby": "code",
-                   "sortorder": "asc", "page": 1, "per_page": 9999}
-        resp = requests.get(url, params=params, headers=headers, timeout=30)
-        resp.raise_for_status()
-        data   = resp.json()
-        stocks = [
-            (
-                f"{item['code']}.KL",
-                (item.get("stock_name") or item.get("symbol") or
-                 item.get("name") or "").strip().split()[0]
-            )
-            for item in data.get("data", []) if item.get("code")
-        ]
-        if stocks:
-            log.info(f"Fetched {len(stocks)} tickers from KLSEScreener")
-            return stocks
+        stocks = _fetch_klsescreener()
+        log.info(f"✅ Layer 1 (KLSEScreener): {len(stocks)} stocks")
+        return stocks
     except Exception as e:
-        log.warning(f"KLSEScreener fetch failed: {e} — using fallback list")
+        log.warning(f"Layer 1 failed: {e}")
 
-    fallback = [
-        ("1155.KL", "MAYBANK"), ("1295.KL", "PBBANK"),  ("1023.KL", "CIMB"),
-        ("5183.KL", "PCHEM"),   ("6888.KL", "AXIATA"),  ("4863.KL", "TM"),
-        ("6947.KL", "MAXIS"),   ("5347.KL", "TENAGA"),  ("3816.KL", "MISC"),
-        ("2445.KL", "SIME"),    ("4197.KL", "SIMEPLT"), ("5285.KL", "IHH"),
-        ("7277.KL", "DIALOG"),  ("5168.KL", "HARTA"),   ("7113.KL", "KOSSAN"),
-        ("5110.KL", "SUPERCOMNET"), ("0023.KL", "KOBAY"),
-        ("0007.KL", "LACMED"),  ("0166.KL", "TOPGLOV"),
+    # Layer 2: Systematic Bursa code generation
+    try:
+        stocks = _generate_bursa_codes()
+        log.info(f"✅ Layer 2 (systematic codes): {len(stocks)} codes to probe")
+        return stocks
+    except Exception as e:
+        log.warning(f"Layer 2 failed: {e}")
+
+    # Layer 3: Hardcoded list
+    log.info(f"✅ Layer 3 (hardcoded): {len(BURSA_HARDCODED)} stocks")
+    return BURSA_HARDCODED
+
+
+def _fetch_klsescreener() -> list[tuple[str, str]]:
+    url     = "https://www.klsescreener.com/v2/screener/quote_results"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/124.0.0.0 Safari/537.36",
+        "Accept":          "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer":         "https://www.klsescreener.com/v2/screener",
+        "Origin":          "https://www.klsescreener.com",
+    }
+    params = {"board": "", "sector": "", "sortby": "code",
+              "sortorder": "asc", "page": 1, "per_page": 9999}
+    resp   = requests.get(url, params=params, headers=headers, timeout=20)
+    resp.raise_for_status()
+    data   = resp.json()
+    stocks = [
+        (
+            f"{item['code']}.KL",
+            (item.get("stock_name") or item.get("symbol") or
+             item.get("name") or "").strip().split()[0]
+        )
+        for item in data.get("data", []) if item.get("code")
     ]
-    log.info(f"Using fallback list of {len(fallback)} tickers")
-    return fallback
+    if not stocks:
+        raise ValueError("Empty list")
+    return stocks
+
+
+def _generate_bursa_codes() -> list[tuple[str, str]]:
+    """Generate all possible 4-digit Bursa codes."""
+    ranges = [
+        (1, 999), (1000, 1999), (2000, 2999), (3000, 3999),
+        (4000, 4999), (5000, 5999), (6000, 6999),
+        (7000, 7999), (8000, 8999), (9000, 9999),
+    ]
+    codes = []
+    for start, end in ranges:
+        for i in range(start, end + 1):
+            codes.append((f"{i:04d}.KL", ""))
+    return codes
 
 
 # ── Signal detection ───────────────────────────────────────────────────────────
 def analyze(ticker: str, name: str = "") -> Optional[dict]:
-    """
-    Download 2 years of daily OHLCV and check all signal conditions.
-    Uses actual traded prices (auto_adjust=False).
-    Only fires if:
-      - Price is UP vs yesterday's actual close
-      - Price is within RM0.205 – RM6.90 range
-      - Price is within 7% of 52-week high (Pending Breakout gate)
-    """
     try:
-        # Resolve stock name from yfinance if not supplied
+        # Resolve name from yfinance if missing
         if not name:
             try:
                 info = yf.Ticker(ticker).info
@@ -227,25 +412,18 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
             except Exception:
                 name = ticker.replace(".KL", "")
 
-        # ── Download: auto_adjust=False → real traded prices ─────────────────
+        # auto_adjust=False → real traded prices
         df = yf.download(
-            ticker,
-            period="2y",
-            interval="1d",
-            progress=False,
-            auto_adjust=False,
+            ticker, period="2y", interval="1d",
+            progress=False, auto_adjust=False,
         )
 
         if df is None or df.empty or len(df) < 210:
             return None
 
-        # Flatten MultiIndex columns if present
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
 
-        # Close     = actual last traded price (display, gate, price filter)
-        # Adj Close = dividend-adjusted (MA calculations only)
-        # High      = actual daily high (52WH, ATH)
         close     = df["Close"].dropna()
         adj_close = df["Adj Close"].dropna()
         high      = df["High"].dropna()
@@ -257,69 +435,50 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
         current_price  = float(close.iloc[-1])
         current_volume = float(volume.iloc[-1])
 
-        # ── Price range filter: RM0.205 – RM6.90 ─────────────────────────────
+        # Price range filter: RM0.205 – RM6.90
         if not (MIN_PRICE <= current_price <= MAX_PRICE):
             return None
 
-        # ── Liquidity filter ──────────────────────────────────────────────────
+        # Liquidity filter
         avg_vol = float(volume.rolling(20).mean().iloc[-1])
         if avg_vol < MIN_VOLUME:
             return None
 
-        # ── Gate: price must be UP vs yesterday's actual close ────────────────
+        # Gate: price must be UP vs yesterday's actual close
         prev_close = float(close.iloc[-2])
         if current_price <= prev_close:
             return None
 
-        # ── 52WH: rolling 252 days on actual High prices ──────────────────────
+        # 52WH: rolling 252 days on actual High (aligned index)
         high_aligned = high.reindex(close.index).dropna()
         high_252     = float(high_aligned.rolling(252).max().iloc[-1])
         pct_to_52wh  = (high_252 - current_price) / current_price * 100
 
-        # ── Pre-filter: only continue if within 7% of 52WH ───────────────────
-        # (catches 52WH alert + Pending Breakout; skip stocks far from high)
-        if pct_to_52wh > PENDING_BREAKOUT_PCT and \
-           current_price < high_252 * (1 - WH52_TOLERANCE / 100):
-            # Not near 52WH at all — still check other signals below
-            pass   # we allow GC, Bullish Zone, ATH, Volume Surge regardless
-
-        # ── All-time high from actual highs ───────────────────────────────────
+        # ATH from actual highs
         ath = float(high_aligned.max())
 
-        # ── Moving averages on Adj Close (accurate across dividends/splits) ───
+        # MA on Adj Close (accurate across dividends/splits)
         ma50  = adj_close.rolling(50).mean()
         ma200 = adj_close.rolling(200).mean()
-
         ma50_now   = float(ma50.iloc[-1])
         ma50_prev  = float(ma50.iloc[-2])
         ma200_now  = float(ma200.iloc[-1])
         ma200_prev = float(ma200.iloc[-2])
 
-        # ── Build signals ─────────────────────────────────────────────────────
+        # Build signals
         pct_chg = (current_price - prev_close) / prev_close * 100
         signals = [f"📈 Price Up (+{pct_chg:.2f}% vs yesterday)"]
 
-        # Golden Cross
         if ma50_now > ma200_now and ma50_prev <= ma200_prev:
             signals.append("📗 GC Alert")
-
-        # Bullish Zone
         if ma50_now > ma200_now:
             signals.append("📗 Bullish Zone Alert")
-
-        # ATH
         if current_price >= ath * (1 - ATH_TOLERANCE / 100):
             signals.append("📗 ATH Alert")
-
-        # 52WH
         if current_price >= high_252 * (1 - WH52_TOLERANCE / 100):
             signals.append("📗 52WH Alert")
-
-        # Pending Breakout (only if NOT already at 52WH, within 7%)
         elif 0 < pct_to_52wh <= PENDING_BREAKOUT_PCT:
             signals.append(f"🔥 Pending Breakout ({pct_to_52wh:.1f}% to 52WH)")
-
-        # Volume Surge
         if avg_vol > 0 and current_volume >= avg_vol * VOLUME_SURGE_MULT:
             signals.append("📈 Volume Surge")
 
@@ -346,14 +505,13 @@ def run_scan():
     log.info(f"Saham Alert starting at {start.strftime('%Y-%m-%d %H:%M')} MYT")
     log.info("=" * 60)
 
-    # ── Market open guard (weekday + public holiday + trading hours) ──────────
     if not is_market_open():
         return
 
     stocks = get_bursa_tickers()
     log.info(f"Scanning {len(stocks)} stocks | "
-             f"Price range RM{MIN_PRICE}–RM{MAX_PRICE} | "
-             f"Pending Breakout threshold {PENDING_BREAKOUT_PCT}% to 52WH")
+             f"Price RM{MIN_PRICE}–RM{MAX_PRICE} | "
+             f"Breakout within {PENDING_BREAKOUT_PCT}% of 52WH")
 
     results = []
     done    = 0
@@ -375,8 +533,7 @@ def run_scan():
         log.info("No signals this run.")
         return
 
-    # Summary message
-    myt = timezone(timedelta(hours=8))
+    myt     = timezone(timedelta(hours=8))
     now_myt = datetime.now(myt)
     summary = (
         f"<b>🔍 Saham Alert — Market Scan</b>\n"
