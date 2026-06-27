@@ -166,12 +166,13 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
             except Exception:
                 name = ticker.replace(".KL", "")
 
+        # ── Fix: auto_adjust=False gives real traded prices for Bursa stocks ──
         df = yf.download(
             ticker,
             period="2y",
             interval="1d",
             progress=False,
-            auto_adjust=True,
+            auto_adjust=False,   # use actual traded prices, not adjusted
         )
 
         if df is None or df.empty or len(df) < 210:
@@ -181,9 +182,13 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
 
-        close  = df["Close"].dropna()
-        high   = df["High"].dropna()
-        volume = df["Volume"].dropna()
+        # ── Fix: use "Adj Close" for MA calculations but "Close" for price ──
+        # "Close"     = actual last traded price (what shows on the market)
+        # "Adj Close" = dividend/split adjusted (used only for MA accuracy)
+        close     = df["Close"].dropna()      # actual price for display & gate
+        adj_close = df["Adj Close"].dropna()  # adjusted price for MA signals
+        high      = df["High"].dropna()       # actual high for 52WH/ATH
+        volume    = df["Volume"].dropna()
 
         if len(close) < 60:
             return None
@@ -198,24 +203,26 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
         if avg_vol < MIN_VOLUME:
             return None
 
-        # Moving averages
-        ma50  = close.rolling(50).mean()
-        ma200 = close.rolling(200).mean()
+        # Moving averages (use adj_close for accuracy across dividends/splits)
+        ma50  = adj_close.rolling(50).mean()
+        ma200 = adj_close.rolling(200).mean()
 
         ma50_now   = float(ma50.iloc[-1])
         ma50_prev  = float(ma50.iloc[-2])
         ma200_now  = float(ma200.iloc[-1])
         ma200_prev = float(ma200.iloc[-2])
 
-        # 52-week metrics
-        high_252    = float(high.rolling(252).max().iloc[-1])
-        pct_to_52wh = (high_252 - current_price) / current_price * 100
+        # ── Fix: 52WH uses actual High prices, rolling 252 trading days ──────
+        # Align high to close index to avoid length mismatch
+        high_aligned = high.reindex(close.index).dropna()
+        high_252     = float(high_aligned.rolling(252).max().iloc[-1])
+        pct_to_52wh  = (high_252 - current_price) / current_price * 100
 
-        # All-time high
-        ath = float(high.max())
+        # All-time high from actual highs
+        ath = float(high_aligned.max())
 
-        # ── Gate: only proceed if price is UP vs yesterday ────────────────────
-        prev_close = float(close.iloc[-2])
+        # ── Gate: only proceed if actual price is UP vs yesterday ─────────────
+        prev_close = float(close.iloc[-2])   # yesterday's actual close
         if current_price <= prev_close:
             return None
 
@@ -259,11 +266,33 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
 
 
 # ── Main scan ──────────────────────────────────────────────────────────────────
+def is_market_open() -> bool:
+    """
+    Returns True only during Bursa Malaysia trading hours.
+    Mon–Fri, 9:00am–5:00pm MYT (UTC+8).
+    Acts as a safety guard in case GitHub Actions fires outside schedule.
+    """
+    from datetime import timezone, timedelta
+    myt  = timezone(timedelta(hours=8))
+    now  = datetime.now(myt)
+    # weekday(): Monday=0, Friday=4, Saturday=5, Sunday=6
+    if now.weekday() > 4:
+        return False
+    market_open  = now.replace(hour=9,  minute=0,  second=0, microsecond=0)
+    market_close = now.replace(hour=17, minute=0,  second=0, microsecond=0)
+    return market_open <= now <= market_close
+
+
 def run_scan():
     start = datetime.now()
     log.info("=" * 60)
     log.info(f"Saham Alert scanner starting at {start.strftime('%Y-%m-%d %H:%M MYT')}")
     log.info("=" * 60)
+
+    # ── Market hours guard ────────────────────────────────────────────────────
+    if not is_market_open():
+        log.info("Outside Bursa market hours (Mon–Fri 9am–5pm MYT). Skipping scan.")
+        return
 
     stocks = get_bursa_tickers()
     log.info(f"Scanning {len(stocks)} stocks with {MAX_WORKERS} threads…")
