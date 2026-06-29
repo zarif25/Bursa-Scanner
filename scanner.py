@@ -352,7 +352,7 @@ def get_bursa_tickers() -> list[tuple[str, str]]:
         json_path = pathlib.Path(__file__).parent / "stocks.json"
         data   = json.loads(json_path.read_text())
         stocks = [(item["code"], item["name"].replace(".KL","")) for item in data if item.get("code") and item.get("name")]
-        if len(stocks) > 50:
+        if len(stocks) > 500:
             log.info(f"✅ Layer 2 (stocks.json): {len(stocks)} stocks")
             return stocks
     except Exception as e:
@@ -372,7 +372,7 @@ def get_bursa_tickers() -> list[tuple[str, str]]:
                     symbol = row[1].strip().replace('.KL', '')
                     if code and symbol:
                         stocks.append((code, symbol))
-        if len(stocks) > 50:
+        if len(stocks) > 500:
             log.info(f"✅ Layer 3 (CSV): {len(stocks)} stocks")
             return stocks
     except Exception as e:
