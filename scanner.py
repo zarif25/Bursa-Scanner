@@ -332,27 +332,33 @@ BURSA_HARDCODED: list[tuple[str, str]] = [
 def get_bursa_tickers() -> list[tuple[str, str]]:
     """
     3-layer stock list fetcher:
-    1. KLSEScreener (live, full market)
-    2. Systematic code generation (all 0001–9999 ranges)
-    3. Hardcoded comprehensive list
+    1. KLSEScreener API   — live full market list (~1000 stocks)
+    2. stocks.json        — bundled verified list (200+ stocks)
+    3. BURSA_HARDCODED    — minimal fallback (last resort)
     """
     # Layer 1: KLSEScreener
     try:
         stocks = _fetch_klsescreener()
-        log.info(f"✅ Layer 1 (KLSEScreener): {len(stocks)} stocks")
-        return stocks
+        if len(stocks) > 100:
+            log.info(f"✅ Layer 1 (KLSEScreener): {len(stocks)} stocks")
+            return stocks
+        log.warning(f"Layer 1 only returned {len(stocks)} — skipping")
     except Exception as e:
         log.warning(f"Layer 1 failed: {e}")
 
-    # Layer 2: Systematic Bursa code generation
+    # Layer 2: stocks.json bundled in repo
     try:
-        stocks = _generate_bursa_codes()
-        log.info(f"✅ Layer 2 (systematic codes): {len(stocks)} codes to probe")
-        return stocks
+        import json, pathlib
+        json_path = pathlib.Path(__file__).parent / "stocks.json"
+        data   = json.loads(json_path.read_text())
+        stocks = [(item["code"], item["name"]) for item in data]
+        if len(stocks) > 50:
+            log.info(f"✅ Layer 2 (stocks.json): {len(stocks)} stocks")
+            return stocks
     except Exception as e:
         log.warning(f"Layer 2 failed: {e}")
 
-    # Layer 3: Hardcoded list
+    # Layer 3: Hardcoded fallback
     log.info(f"✅ Layer 3 (hardcoded): {len(BURSA_HARDCODED)} stocks")
     return BURSA_HARDCODED
 
