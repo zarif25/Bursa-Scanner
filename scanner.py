@@ -418,11 +418,32 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
             except Exception:
                 name = ticker.replace(".KL", "")
 
-        # auto_adjust=False → real traded prices
-        df = yf.download(
-            ticker, period="2y", interval="1d",
-            progress=False, auto_adjust=False,
-        )
+        # ── Step 1: get real current price via fast_info ─────────────────────
+        # fast_info.last_price is the most reliable current price from yfinance
+        tk = yf.Ticker(ticker)
+        try:
+            fi = tk.fast_info
+            current_price = float(fi.last_price)
+            prev_close    = float(fi.previous_close)
+        except Exception:
+            return None
+
+        # Sanity check: prices must be positive and reasonable
+        if not current_price or not prev_close:
+            return None
+        if current_price <= 0 or prev_close <= 0:
+            return None
+
+        # Price range filter: RM0.205 – RM6.90
+        if not (MIN_PRICE <= current_price <= MAX_PRICE):
+            return None
+
+        # Gate: price must be UP vs yesterday's actual close
+        if current_price <= prev_close:
+            return None
+
+        # ── Step 2: download history for signal calculations ──────────────────
+        df = tk.history(period="2y", interval="1d", auto_adjust=True)
 
         if df is None or df.empty or len(df) < 210:
             return None
@@ -430,42 +451,34 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
 
-        close     = df["Close"].dropna()
-        adj_close = df["Adj Close"].dropna()
-        high      = df["High"].dropna()
-        volume    = df["Volume"].dropna()
+        close  = df["Close"].dropna()
+        high   = df["High"].dropna()
+        volume = df["Volume"].dropna()
 
         if len(close) < 60:
             return None
 
-        current_price  = float(close.iloc[-1])
         current_volume = float(volume.iloc[-1])
-
-        # Price range filter: RM0.205 – RM6.90
-        if not (MIN_PRICE <= current_price <= MAX_PRICE):
-            return None
 
         # Liquidity filter
         avg_vol = float(volume.rolling(20).mean().iloc[-1])
         if avg_vol < MIN_VOLUME:
             return None
 
-        # Gate: price must be UP vs yesterday's actual close
-        prev_close = float(close.iloc[-2])
-        if current_price <= prev_close:
-            return None
+        # Use fast_info prices (already validated above)
+        # adj_close = close for signal MA calculations
+        adj_close = close
 
-        # 52WH: rolling 252 days on actual High (aligned index)
-        high_aligned = high.reindex(close.index).dropna()
-        high_252     = float(high_aligned.rolling(252).max().iloc[-1])
-        pct_to_52wh  = (high_252 - current_price) / current_price * 100
+        # 52WH: rolling 252 days on High prices
+        high_252    = float(high.rolling(252).max().iloc[-1])
+        pct_to_52wh = (high_252 - current_price) / current_price * 100
 
-        # ATH from actual highs
-        ath = float(high_aligned.max())
+        # ATH from full history highs
+        ath = float(high.max())
 
-        # MA on Adj Close (accurate across dividends/splits)
-        ma50  = adj_close.rolling(50).mean()
-        ma200 = adj_close.rolling(200).mean()
+        # MA calculations on close
+        ma50  = close.rolling(50).mean()
+        ma200 = close.rolling(200).mean()
         ma50_now   = float(ma50.iloc[-1])
         ma50_prev  = float(ma50.iloc[-2])
         ma200_now  = float(ma200.iloc[-1])
