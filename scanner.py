@@ -1,6 +1,8 @@
+
+Scanner · PY
 """
 Bursa Malaysia Market Scanner — Saham Alert
-
+ 
 Signals detected (only fires when price is UP vs yesterday's close):
   - Price Up                 : Current price higher than yesterday's close
   - Golden Cross (GC)        : MA50 crosses above MA200
@@ -9,19 +11,19 @@ Signals detected (only fires when price is UP vs yesterday's close):
   - All-Time High (ATH)      : Price within 0.5% of all-time high
   - Pending Breakout         : Price within 7% of 52-week high
   - Volume Surge             : Volume 2x above 20-day average
-
+ 
 Filters:
   - Price range RM0.205 – RM6.90 only
   - Skips Bursa public holidays (Malaysia)
   - Only runs Mon–Fri 9am–5pm MYT
   - Scans ~1000 Bursa Malaysia counters
-
+ 
 Stock list strategy (3 layers, first success wins):
   1. KLSEScreener API  — live full market list
   2. Bursa systematic  — auto-generate codes 0001–9999 in known ranges
   3. Hardcoded list    — 400+ known active counters as final fallback
 """
-
+ 
 import os
 import time
 import logging
@@ -31,7 +33,7 @@ import yfinance as yf
 from datetime import date, datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
-
+ 
 # ── Logging ────────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
@@ -39,11 +41,11 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 log = logging.getLogger("bursa-scanner")
-
+ 
 # ── Config ─────────────────────────────────────────────────────────────────────
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 CHAT_ID   = os.environ.get("CHAT_ID",   "")
-
+ 
 PENDING_BREAKOUT_PCT  =  7.0
 VOLUME_SURGE_MULT     =  2.0
 ATH_TOLERANCE         =  0.5
@@ -53,8 +55,8 @@ MAX_PRICE             =  6.90
 MIN_VOLUME            = 50_000
 MAX_WORKERS           = 20
 DELAY_BETWEEN_MSGS    =  1.0
-
-
+ 
+ 
 # ── Malaysia Public Holidays ───────────────────────────────────────────────────
 MALAYSIA_PUBLIC_HOLIDAYS = {
     # 2025
@@ -72,8 +74,8 @@ MALAYSIA_PUBLIC_HOLIDAYS = {
     date(2026,  8, 31), date(2026,  9, 15), date(2026,  9, 16),
     date(2026, 11,  9), date(2026, 12, 25),
 }
-
-
+ 
+ 
 # ── Market status ──────────────────────────────────────────────────────────────
 def is_market_open() -> bool:
     myt = timezone(timedelta(hours=8))
@@ -91,8 +93,8 @@ def is_market_open() -> bool:
         log.info(f"Market closed: outside trading hours ({now.strftime('%H:%M')} MYT)")
         return False
     return True
-
-
+ 
+ 
 # ── Telegram ───────────────────────────────────────────────────────────────────
 def send_telegram(message: str) -> bool:
     if not BOT_TOKEN or not CHAT_ID:
@@ -113,8 +115,8 @@ def send_telegram(message: str) -> bool:
     except Exception as e:
         log.error(f"Telegram error: {e}")
         return False
-
-
+ 
+ 
 def format_alert(ticker: str, price: float, signals: list[str], name: str = "") -> str:
     code     = ticker.replace(".KL", "")
     tv_label = name if name else code
@@ -129,8 +131,8 @@ def format_alert(ticker: str, price: float, signals: list[str], name: str = "") 
         f"Chart Link :\n"
         f'<a href="{chart}">{chart}</a>'
     )
-
-
+ 
+ 
 # ── Stock list — 3-layer approach ──────────────────────────────────────────────
 def _fetch_klsescreener() -> list[tuple[str, str]]:
     """Layer 1: Live list from KLSEScreener."""
@@ -160,8 +162,8 @@ def _fetch_klsescreener() -> list[tuple[str, str]]:
     if not stocks:
         raise ValueError("Empty stock list from KLSEScreener")
     return stocks
-
-
+ 
+ 
 def _generate_bursa_codes() -> list[tuple[str, str]]:
     """
     Layer 2: Systematically generate all possible Bursa codes.
@@ -188,8 +190,8 @@ def _generate_bursa_codes() -> list[tuple[str, str]]:
         for i in range(start, end + 1):
             codes.append((f"{i:04d}.KL", ""))
     return codes
-
-
+ 
+ 
 # ── Comprehensive hardcoded list (400+ active Bursa counters) ──────────────────
 BURSA_HARDCODED: list[tuple[str, str]] = [
     # Main Board — Blue Chips
@@ -327,8 +329,8 @@ BURSA_HARDCODED: list[tuple[str, str]] = [
     ("0082.KL","HEXATAB"),  ("0023.KL","HIAPTEK"),   ("0053.KL","HIAP"),
     ("0143.KL","HI-TECH"),  ("0082.KL","HIBISCS"),   ("0023.KL","HIGHWAY"),
 ]
-
-
+ 
+ 
 def get_bursa_tickers() -> list[tuple[str, str]]:
     """
     3-layer stock list fetcher:
@@ -336,16 +338,16 @@ def get_bursa_tickers() -> list[tuple[str, str]]:
     2. stocks.json        — bundled verified list (200+ stocks)
     3. BURSA_HARDCODED    — minimal fallback (last resort)
     """
-    # Layer 1: KLSEScreener
+    # Layer 1: KLSEScreener — only accept if full market list returned
     try:
         stocks = _fetch_klsescreener()
-        if len(stocks) > 100:
+        if len(stocks) >= 500:
             log.info(f"✅ Layer 1 (KLSEScreener): {len(stocks)} stocks")
             return stocks
-        log.warning(f"Layer 1 only returned {len(stocks)} — skipping")
+        log.warning(f"Layer 1 only returned {len(stocks)} stocks — too few, skipping to Layer 2")
     except Exception as e:
         log.warning(f"Layer 1 failed: {e}")
-
+ 
     # Layer 2: stocks.json bundled in repo
     try:
         import json, pathlib
@@ -357,7 +359,7 @@ def get_bursa_tickers() -> list[tuple[str, str]]:
             return stocks
     except Exception as e:
         log.warning(f"Layer 2 failed: {e}")
-
+ 
     # Layer 3: CSV file (Bursa_Malaysia.csv)
     try:
         import csv, pathlib
@@ -377,12 +379,12 @@ def get_bursa_tickers() -> list[tuple[str, str]]:
             return stocks
     except Exception as e:
         log.warning(f"Layer 3 CSV failed: {e}")
-
+ 
     # Layer 4: Hardcoded fallback
     log.info(f"✅ Layer 4 (hardcoded): {len(BURSA_HARDCODED)} stocks")
     return BURSA_HARDCODED
-
-
+ 
+ 
 def _fetch_klsescreener() -> list[tuple[str, str]]:
     url     = "https://www.klsescreener.com/v2/screener/quote_results"
     headers = {
@@ -410,8 +412,8 @@ def _fetch_klsescreener() -> list[tuple[str, str]]:
     if not stocks:
         raise ValueError("Empty list")
     return stocks
-
-
+ 
+ 
 def _generate_bursa_codes() -> list[tuple[str, str]]:
     """Generate all possible 4-digit Bursa codes."""
     ranges = [
@@ -424,8 +426,8 @@ def _generate_bursa_codes() -> list[tuple[str, str]]:
         for i in range(start, end + 1):
             codes.append((f"{i:04d}.KL", ""))
     return codes
-
-
+ 
+ 
 # ── Signal detection ───────────────────────────────────────────────────────────
 def analyze(ticker: str, name: str = "") -> Optional[dict]:
     try:
@@ -437,7 +439,7 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
                 name = raw.split()[0] if raw else ticker.replace(".KL", "")
             except Exception:
                 name = ticker.replace(".KL", "")
-
+ 
         # ── Step 1: get real current price via fast_info ─────────────────────
         # fast_info.last_price is the most reliable current price from yfinance
         tk = yf.Ticker(ticker)
@@ -447,55 +449,55 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
             prev_close    = float(fi.previous_close)
         except Exception:
             return None
-
+ 
         # Sanity check: prices must be positive and reasonable
         if not current_price or not prev_close:
             return None
         if current_price <= 0 or prev_close <= 0:
             return None
-
+ 
         # Price range filter: RM0.205 – RM6.90
         if not (MIN_PRICE <= current_price <= MAX_PRICE):
             return None
-
+ 
         # Gate: price must be UP vs yesterday's actual close
         if current_price <= prev_close:
             return None
-
+ 
         # ── Step 2: download history for signal calculations ──────────────────
         df = tk.history(period="2y", interval="1d", auto_adjust=True)
-
+ 
         if df is None or df.empty or len(df) < 210:
             return None
-
+ 
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
-
+ 
         close  = df["Close"].dropna()
         high   = df["High"].dropna()
         volume = df["Volume"].dropna()
-
+ 
         if len(close) < 60:
             return None
-
+ 
         current_volume = float(volume.iloc[-1])
-
+ 
         # Liquidity filter
         avg_vol = float(volume.rolling(20).mean().iloc[-1])
         if avg_vol < MIN_VOLUME:
             return None
-
+ 
         # Use fast_info prices (already validated above)
         # adj_close = close for signal MA calculations
         adj_close = close
-
+ 
         # 52WH: rolling 252 days on High prices
         high_252    = float(high.rolling(252).max().iloc[-1])
         pct_to_52wh = (high_252 - current_price) / current_price * 100
-
+ 
         # ATH from full history highs
         ath = float(high.max())
-
+ 
         # MA calculations on close
         ma50  = close.rolling(50).mean()
         ma200 = close.rolling(200).mean()
@@ -503,11 +505,11 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
         ma50_prev  = float(ma50.iloc[-2])
         ma200_now  = float(ma200.iloc[-1])
         ma200_prev = float(ma200.iloc[-2])
-
+ 
         # Build signals
         pct_chg = (current_price - prev_close) / prev_close * 100
         signals = [f"📈 Price Up (+{pct_chg:.2f}% vs yesterday)"]
-
+ 
         if ma50_now > ma200_now and ma50_prev <= ma200_prev:
             signals.append("📗 GC Alert")
         if ma50_now > ma200_now:
@@ -520,41 +522,41 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
             signals.append(f"🔥 Pending Breakout ({pct_to_52wh:.1f}% to 52WH)")
         if avg_vol > 0 and current_volume >= avg_vol * VOLUME_SURGE_MULT:
             signals.append("📈 Volume Surge")
-
+ 
         # Must have at least one signal beyond "Price Up"
         if len(signals) < 2:
             return None
-
+ 
         return {
             "ticker":  ticker,
             "name":    name,
             "price":   current_price,
             "signals": signals,
         }
-
+ 
     except Exception as e:
         log.debug(f"{ticker}: {e}")
         return None
-
-
+ 
+ 
 # ── Main scan ──────────────────────────────────────────────────────────────────
 def run_scan():
     start = datetime.now()
     log.info("=" * 60)
     log.info(f"Saham Alert starting at {start.strftime('%Y-%m-%d %H:%M')} MYT")
     log.info("=" * 60)
-
+ 
     if not is_market_open():
         return
-
+ 
     stocks = get_bursa_tickers()
     log.info(f"Scanning {len(stocks)} stocks | "
              f"Price RM{MIN_PRICE}–RM{MAX_PRICE} | "
              f"Breakout within {PENDING_BREAKOUT_PCT}% of 52WH")
-
+ 
     results = []
     done    = 0
-
+ 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(analyze, t, n): (t, n) for t, n in stocks}
         for future in as_completed(futures):
@@ -564,14 +566,14 @@ def run_scan():
             result = future.result()
             if result:
                 results.append(result)
-
+ 
     elapsed = (datetime.now() - start).seconds
     log.info(f"Scan complete in {elapsed}s — {len(results)} signals found")
-
+ 
     if not results:
         log.info("No signals this run.")
         return
-
+ 
     myt     = timezone(timedelta(hours=8))
     now_myt = datetime.now(myt)
     summary = (
@@ -583,15 +585,37 @@ def run_scan():
     )
     send_telegram(summary)
     time.sleep(DELAY_BETWEEN_MSGS)
-
+ 
     for r in results:
         msg = format_alert(r["ticker"], r["price"], r["signals"], r.get("name", ""))
         log.info(f"  → {r['ticker']} ({r.get('name','')}) {r['signals']}")
         send_telegram(msg)
         time.sleep(DELAY_BETWEEN_MSGS)
-
+ 
     log.info("All alerts sent.")
-
-
+ 
+ 
 if __name__ == "__main__":
     run_scan()
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
