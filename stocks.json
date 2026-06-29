@@ -1,11 +1,1399 @@
 [
   {
+    "code": "0001.KL",
+    "name": "SCOMNET"
+  },
+  {
+    "code": "0002.KL",
+    "name": "KOTRA"
+  },
+  {
+    "code": "0005.KL",
+    "name": "UCREST"
+  },
+  {
+    "code": "0006.KL",
+    "name": "PINEAPP"
+  },
+  {
+    "code": "0007.KL",
+    "name": "PUC"
+  },
+  {
+    "code": "0008.KL",
+    "name": "WILLOW"
+  },
+  {
+    "code": "0010.KL",
+    "name": "IRIS"
+  },
+  {
+    "code": "0011.KL",
+    "name": "BTECH"
+  },
+  {
+    "code": "0012.KL",
+    "name": "3A"
+  },
+  {
+    "code": "0017.KL",
+    "name": "NOVATECH"
+  },
+  {
+    "code": "0018.KL",
+    "name": "LAMBO"
+  },
+  {
+    "code": "0020.KL",
+    "name": "NETX"
+  },
+  {
+    "code": "0022.KL",
+    "name": "PARLO"
+  },
+  {
+    "code": "0023.KL",
+    "name": "IFCAMSC"
+  },
+  {
+    "code": "0024.KL",
+    "name": "JAG"
+  },
+  {
+    "code": "0025.KL",
+    "name": "YBS"
+  },
+  {
+    "code": "0026.KL",
+    "name": "NOVAMSC"
+  },
+  {
+    "code": "0028.KL",
+    "name": "SCOPE"
+  },
+  {
+    "code": "0029.KL",
+    "name": "DIGISTA"
+  },
+  {
+    "code": "0032.KL",
+    "name": "REDTONE"
+  },
+  {
+    "code": "0034.KL",
+    "name": "MMAG"
+  },
+  {
+    "code": "0035.KL",
+    "name": "HEXCAP"
+  },
+  {
+    "code": "0036.KL",
+    "name": "KGROUP"
+  },
+  {
+    "code": "0037.KL",
+    "name": "RGB"
+  },
+  {
+    "code": "0038.KL",
+    "name": "ARTRONIQ"
+  },
+  {
+    "code": "0039.KL",
+    "name": "GFM"
+  },
+  {
+    "code": "0040.KL",
+    "name": "OPENSYS"
+  },
+  {
+    "code": "0041.KL",
+    "name": "AIMAX"
+  },
+  {
+    "code": "0043.KL",
+    "name": "MTRONIC"
+  },
+  {
+    "code": "0045.KL",
+    "name": "SSB8"
+  },
+  {
+    "code": "0048.KL",
+    "name": "ANCOMLB"
+  },
+  {
+    "code": "0049.KL",
+    "name": "OCNCASH"
+  },
+  {
+    "code": "0050.KL",
+    "name": "SYSTECH"
+  },
+  {
+    "code": "0051.KL",
+    "name": "CUSCAPI"
+  },
+  {
+    "code": "0053.KL",
+    "name": "OSKVI"
+  },
+  {
+    "code": "0054.KL",
+    "name": "KARYON"
+  },
+  {
+    "code": "0055.KL",
+    "name": "SERSOL"
+  },
+  {
+    "code": "0056.KL",
+    "name": "NCT"
+  },
+  {
+    "code": "0058.KL",
+    "name": "JCBNEXT"
+  },
+  {
+    "code": "0059.KL",
+    "name": "ECOHLDS"
+  },
+  {
+    "code": "0060.KL",
+    "name": "HM"
+  },
+  {
+    "code": "0064.KL",
+    "name": "EFFICEN"
+  },
+  {
+    "code": "0065.KL",
+    "name": "EFORCE"
+  },
+  {
+    "code": "0066.KL",
+    "name": "VSOLAR"
+  },
+  {
+    "code": "0068.KL",
+    "name": "ASDION"
+  },
+  {
+    "code": "0069.KL",
+    "name": "VINVEST"
+  },
+  {
+    "code": "0070.KL",
+    "name": "MQTECH"
+  },
+  {
+    "code": "0072.KL",
+    "name": "ERDASAN"
+  },
+  {
+    "code": "0074.KL",
+    "name": "GOCEAN"
+  },
+  {
+    "code": "0075.KL",
+    "name": "LYC"
+  },
+  {
+    "code": "0078.KL",
+    "name": "GDEX"
+  },
+  {
+    "code": "0079.KL",
+    "name": "ALRICH"
+  },
+  {
+    "code": "0080.KL",
+    "name": "STRAITS"
+  },
+  {
+    "code": "0081.KL",
+    "name": "REKATECH"
+  },
+  {
+    "code": "0082.KL",
+    "name": "GPACKET"
+  },
+  {
+    "code": "0083.KL",
+    "name": "NOTION"
+  },
+  {
+    "code": "0084.KL",
+    "name": "FAST"
+  },
+  {
+    "code": "0085.KL",
+    "name": "MLAB"
+  },
+  {
+    "code": "0086.KL",
+    "name": "YGL"
+  },
+  {
+    "code": "0089.KL",
+    "name": "TEXCYCL"
+  },
+  {
+    "code": "0090.KL",
+    "name": "ELSOFT"
+  },
+  {
+    "code": "0091.KL",
+    "name": "PGB"
+  },
+  {
+    "code": "0092.KL",
+    "name": "MTOUCHE"
+  },
+  {
+    "code": "0093.KL",
+    "name": "SOLUTN"
+  },
+  {
+    "code": "0094.KL",
+    "name": "ZENTECH"
+  },
+  {
+    "code": "0095.KL",
+    "name": "MAG"
+  },
+  {
+    "code": "0096.KL",
+    "name": "NEXGRAM"
+  },
+  {
+    "code": "0097.KL",
+    "name": "VITROX"
+  },
+  {
+    "code": "0098.KL",
+    "name": "AUMAS"
+  },
+  {
+    "code": "0099.KL",
+    "name": "SCICOM"
+  },
+  {
+    "code": "0100.KL",
+    "name": "ESCERAM"
+  },
+  {
+    "code": "0101.KL",
+    "name": "TMCLIFE"
+  },
+  {
+    "code": "0102.KL",
+    "name": "WAJA"
+  },
+  {
+    "code": "0103.KL",
+    "name": "MNC"
+  },
+  {
+    "code": "0104.KL",
+    "name": "GENETEC"
+  },
+  {
+    "code": "0105.KL",
+    "name": "ASIAPLY"
+  },
+  {
+    "code": "0106.KL",
+    "name": "OMAI"
+  },
+  {
+    "code": "0107.KL",
+    "name": "EDUSPEC"
+  },
+  {
+    "code": "0108.KL",
+    "name": "N2N"
+  },
+  {
+    "code": "0109.KL",
+    "name": "SCBUILD"
+  },
+  {
+    "code": "0111.KL",
+    "name": "K1"
+  },
+  {
+    "code": "0112.KL",
+    "name": "MIKROMB"
+  },
+  {
+    "code": "0113.KL",
+    "name": "MMSV"
+  },
+  {
+    "code": "0116.KL",
+    "name": "FOCUS"
+  },
+  {
+    "code": "0117.KL",
+    "name": "SMRT"
+  },
+  {
+    "code": "0118.KL",
+    "name": "TRIVE"
+  },
+  {
+    "code": "0119.KL",
+    "name": "APPASIA"
+  },
+  {
+    "code": "0120.KL",
+    "name": "VIS"
+  },
+  {
+    "code": "0122.KL",
+    "name": "AIM"
+  },
+  {
+    "code": "0123.KL",
+    "name": "PRIVA"
+  },
+  {
+    "code": "0126.KL",
+    "name": "MICROLN"
+  },
+  {
+    "code": "0127.KL",
+    "name": "JHM"
+  },
+  {
+    "code": "0128.KL",
+    "name": "FRONTKN"
+  },
+  {
+    "code": "0129.KL",
+    "name": "SRIDGE"
+  },
+  {
+    "code": "0131.KL",
+    "name": "DFX"
+  },
+  {
+    "code": "0132.KL",
+    "name": "TDEX"
+  },
+  {
+    "code": "0133.KL",
+    "name": "SANICHI"
+  },
+  {
+    "code": "0136.KL",
+    "name": "GREENYB"
+  },
+  {
+    "code": "0138.KL",
+    "name": "ZETRIX"
+  },
+  {
+    "code": "0140.KL",
+    "name": "XOXNET"
+  },
+  {
+    "code": "0143.KL",
+    "name": "KEYASIC"
+  },
+  {
+    "code": "0145.KL",
+    "name": "TFP"
+  },
+  {
+    "code": "0146.KL",
+    "name": "JFTECH"
+  },
+  {
+    "code": "0147.KL",
+    "name": "INNITY"
+  },
+  {
+    "code": "0148.KL",
+    "name": "SUNZEN"
+  },
+  {
+    "code": "0149.KL",
+    "name": "FIBON"
+  },
+  {
+    "code": "0150.KL",
+    "name": "FINTEC"
+  },
+  {
+    "code": "0151.KL",
+    "name": "KGB"
+  },
+  {
+    "code": "0152.KL",
+    "name": "DGB"
+  },
+  {
+    "code": "0153.KL",
+    "name": "OVERSEA"
+  },
+  {
+    "code": "0154.KL",
+    "name": "EAH"
+  },
+  {
+    "code": "0155.KL",
+    "name": "MGRC"
+  },
+  {
+    "code": "0156.KL",
+    "name": "MPAY"
+  },
+  {
+    "code": "0157.KL",
+    "name": "FOCUSP"
+  },
+  {
+    "code": "0158.KL",
+    "name": "SCC"
+  },
+  {
+    "code": "0159.KL",
+    "name": "MMM"
+  },
+  {
+    "code": "0160.KL",
+    "name": "HHHCORP"
+  },
+  {
+    "code": "0161.KL",
+    "name": "HEXIND"
+  },
+  {
+    "code": "0162.KL",
+    "name": "WIDAD"
+  },
+  {
+    "code": "0163.KL",
+    "name": "CAREPLS"
+  },
+  {
+    "code": "0165.KL",
+    "name": "XOX"
+  },
+  {
+    "code": "0166.KL",
+    "name": "INARI"
+  },
+  {
+    "code": "0167.KL",
+    "name": "MCLEAN"
+  },
+  {
+    "code": "0168.KL",
+    "name": "BMGREEN"
+  },
+  {
+    "code": "0169.KL",
+    "name": "SMTRACK"
+  },
+  {
+    "code": "0170.KL",
+    "name": "KANGER"
+  },
+  {
+    "code": "0171.KL",
+    "name": "PLABS"
+  },
+  {
+    "code": "0172.KL",
+    "name": "OCK"
+  },
+  {
+    "code": "0173.KL",
+    "name": "CATCHA"
+  },
+  {
+    "code": "0174.KL",
+    "name": "EVD"
+  },
+  {
+    "code": "0175.KL",
+    "name": "HHRG"
+  },
+  {
+    "code": "0176.KL",
+    "name": "KRONO"
+  },
+  {
+    "code": "0177.KL",
+    "name": "MIDTOWN"
+  },
+  {
+    "code": "0178.KL",
+    "name": "SEDANIA"
+  },
+  {
+    "code": "0179.KL",
+    "name": "BIOHLDG"
+  },
+  {
+    "code": "0180.KL",
+    "name": "KTC"
+  },
+  {
+    "code": "0181.KL",
+    "name": "AEMULUS"
+  },
+  {
+    "code": "0182.KL",
+    "name": "LKL"
+  },
+  {
+    "code": "0183.KL",
+    "name": "SALUTE"
+  },
+  {
+    "code": "0185.KL",
+    "name": "HSSEB"
+  },
+  {
+    "code": "0186.KL",
+    "name": "PTRANS"
+  },
+  {
+    "code": "0187.KL",
+    "name": "BCMALL"
+  },
+  {
+    "code": "0188.KL",
+    "name": "HLT"
+  },
+  {
+    "code": "0189.KL",
+    "name": "MATANG"
+  },
+  {
+    "code": "0190.KL",
+    "name": "ESAFE"
+  },
+  {
+    "code": "0191.KL",
+    "name": "CABNET"
+  },
+  {
+    "code": "0192.KL",
+    "name": "INTA"
+  },
+  {
+    "code": "0193.KL",
+    "name": "KINERGY"
+  },
+  {
+    "code": "0195.KL",
+    "name": "BINACOM"
+  },
+  {
+    "code": "0196.KL",
+    "name": "QES"
+  },
+  {
+    "code": "0197.KL",
+    "name": "WEGMANS"
+  },
+  {
+    "code": "0198.KL",
+    "name": "GDB"
+  },
+  {
+    "code": "0199.KL",
+    "name": "TRIMODE"
+  },
+  {
+    "code": "0200.KL",
+    "name": "REVENUE"
+  },
+  {
+    "code": "0201.KL",
+    "name": "NOVA"
+  },
+  {
+    "code": "0202.KL",
+    "name": "RGTECH"
+  },
+  {
+    "code": "0203.KL",
+    "name": "SMETRIC"
+  },
+  {
+    "code": "0205.KL",
+    "name": "DPIH"
+  },
+  {
+    "code": "0206.KL",
+    "name": "NADIBHD"
+  },
+  {
+    "code": "0207.KL",
+    "name": "MESTRON"
+  },
+  {
+    "code": "0208.KL",
+    "name": "GREATEC"
+  },
+  {
+    "code": "0209.KL",
+    "name": "AIMFLEX"
+  },
+  {
+    "code": "0210.KL",
+    "name": "KHJB"
+  },
+  {
+    "code": "0211.KL",
+    "name": "TASHIN"
+  },
+  {
+    "code": "0212.KL",
+    "name": "SDS"
+  },
+  {
+    "code": "0213.KL",
+    "name": "MTAG"
+  },
+  {
+    "code": "0215.KL",
+    "name": "SLVEST"
+  },
+  {
+    "code": "0216.KL",
+    "name": "SPRING"
+  },
+  {
+    "code": "0217.KL",
+    "name": "PWRWELL"
+  },
+  {
+    "code": "0218.KL",
+    "name": "ACO"
+  },
+  {
+    "code": "0219.KL",
+    "name": "RL"
+  },
+  {
+    "code": "0220.KL",
+    "name": "OVH"
+  },
+  {
+    "code": "0221.KL",
+    "name": "TCS"
+  },
+  {
+    "code": "0222.KL",
+    "name": "OPTIMAX"
+  },
+  {
+    "code": "0223.KL",
+    "name": "SAMAIDEN"
+  },
+  {
+    "code": "0225.KL",
+    "name": "SCGBHD"
+  },
+  {
+    "code": "0226.KL",
+    "name": "ANEKA"
+  },
+  {
+    "code": "0227.KL",
+    "name": "EFRAME"
+  },
+  {
+    "code": "0228.KL",
+    "name": "HPPHB"
+  },
+  {
+    "code": "0229.KL",
+    "name": "MOBILIA"
+  },
+  {
+    "code": "0230.KL",
+    "name": "TELADAN"
+  },
+  {
+    "code": "0231.KL",
+    "name": "FLEXI"
+  },
+  {
+    "code": "0232.KL",
+    "name": "VOLCANO"
+  },
+  {
+    "code": "0233.KL",
+    "name": "PEKAT"
+  },
+  {
+    "code": "0235.KL",
+    "name": "NESTCON"
+  },
+  {
+    "code": "0236.KL",
+    "name": "RAMSSOL"
+  },
+  {
+    "code": "0237.KL",
+    "name": "HAILY"
+  },
+  {
+    "code": "0238.KL",
+    "name": "CEKD"
+  },
+  {
+    "code": "0239.KL",
+    "name": "ECOMATE"
+  },
+  {
+    "code": "0240.KL",
+    "name": "CORAZA"
+  },
+  {
+    "code": "0241.KL",
+    "name": "TAGHILL"
+  },
+  {
+    "code": "0242.KL",
+    "name": "PPJACK"
+  },
+  {
+    "code": "0243.KL",
+    "name": "CENGILD"
+  },
+  {
+    "code": "0245.KL",
+    "name": "MNHLDG"
+  },
+  {
+    "code": "0246.KL",
+    "name": "CNERGEN"
+  },
+  {
+    "code": "0247.KL",
+    "name": "UNITRAD"
+  },
+  {
+    "code": "0248.KL",
+    "name": "YEWLEE"
+  },
+  {
+    "code": "0249.KL",
+    "name": "LGMS"
+  },
+  {
+    "code": "0250.KL",
+    "name": "YXPM"
+  },
+  {
+    "code": "0251.KL",
+    "name": "SFPTECH"
+  },
+  {
+    "code": "0252.KL",
+    "name": "ORGABIO"
+  },
+  {
+    "code": "0253.KL",
+    "name": "INFOTEC"
+  },
+  {
+    "code": "0255.KL",
+    "name": "EIB"
+  },
+  {
+    "code": "0256.KL",
+    "name": "UMC"
+  },
+  {
+    "code": "0257.KL",
+    "name": "UNIQUE"
+  },
+  {
+    "code": "0258.KL",
+    "name": "AGMO"
+  },
+  {
+    "code": "0259.KL",
+    "name": "SNS"
+  },
+  {
+    "code": "0260.KL",
+    "name": "PTRB"
+  },
+  {
+    "code": "0261.KL",
+    "name": "COSMOS"
+  },
+  {
+    "code": "0262.KL",
+    "name": "SUNVIEW"
+  },
+  {
+    "code": "0263.KL",
+    "name": "BETA"
+  },
+  {
+    "code": "0265.KL",
+    "name": "INFOM"
+  },
+  {
+    "code": "0266.KL",
+    "name": "LEFORM"
+  },
+  {
+    "code": "0267.KL",
+    "name": "ECA"
+  },
+  {
+    "code": "0268.KL",
+    "name": "L&PBHD"
+  },
+  {
+    "code": "0269.KL",
+    "name": "DSS"
+  },
+  {
+    "code": "0270.KL",
+    "name": "NATGATE"
+  },
+  {
+    "code": "0271.KL",
+    "name": "WELLS"
+  },
+  {
+    "code": "0272.KL",
+    "name": "TTVHB"
+  },
+  {
+    "code": "0273.KL",
+    "name": "VLB"
+  },
+  {
+    "code": "0275.KL",
+    "name": "OPPSTAR"
+  },
+  {
+    "code": "0276.KL",
+    "name": "ADB"
+  },
+  {
+    "code": "0277.KL",
+    "name": "CLOUDPT"
+  },
+  {
+    "code": "0278.KL",
+    "name": "EDELTEQ"
+  },
+  {
+    "code": "0279.KL",
+    "name": "SYNERGY"
+  },
+  {
+    "code": "0280.KL",
+    "name": "MBN"
+  },
+  {
+    "code": "0281.KL",
+    "name": "DAY3"
+  },
+  {
+    "code": "0282.KL",
+    "name": "KGW"
+  },
+  {
+    "code": "0283.KL",
+    "name": "DCHCARE"
+  },
+  {
+    "code": "0284.KL",
+    "name": "GLXT"
+  },
+  {
+    "code": "0285.KL",
+    "name": "MERSEC"
+  },
+  {
+    "code": "0286.KL",
+    "name": "EMCC"
+  },
+  {
+    "code": "0287.KL",
+    "name": "SSF"
+  },
+  {
+    "code": "0288.KL",
+    "name": "MINOX"
+  },
+  {
+    "code": "0289.KL",
+    "name": "PLYTEC"
+  },
+  {
+    "code": "0290.KL",
+    "name": "PANDA"
+  },
+  {
+    "code": "0291.KL",
+    "name": "CHB"
+  },
+  {
+    "code": "0292.KL",
+    "name": "JTGROUP"
+  },
+  {
+    "code": "0293.KL",
+    "name": "KJTS"
+  },
+  {
+    "code": "0295.KL",
+    "name": "MTEC"
+  },
+  {
+    "code": "0296.KL",
+    "name": "HEGROUP"
+  },
+  {
+    "code": "0297.KL",
+    "name": "TSA"
+  },
+  {
+    "code": "0298.KL",
+    "name": "WENTEL"
+  },
+  {
+    "code": "0299.KL",
+    "name": "AGX"
+  },
+  {
+    "code": "0300.KL",
+    "name": "SBH"
+  },
+  {
+    "code": "0301.KL",
+    "name": "ZANTAT"
+  },
+  {
+    "code": "0302.KL",
+    "name": "TOPMIX"
+  },
+  {
+    "code": "0303.KL",
+    "name": "ALPHA"
+  },
+  {
+    "code": "0304.KL",
+    "name": "FPHB"
+  },
+  {
+    "code": "0305.KL",
+    "name": "SINKUNG"
+  },
+  {
+    "code": "0306.KL",
+    "name": "SMART"
+  },
+  {
+    "code": "0307.KL",
+    "name": "KENERGY"
+  },
+  {
+    "code": "0308.KL",
+    "name": "KTI"
+  },
+  {
+    "code": "0309.KL",
+    "name": "AGRICOR"
+  },
+  {
+    "code": "0310.KL",
+    "name": "UUE"
+  },
+  {
+    "code": "0311.KL",
+    "name": "GOHUB"
+  },
+  {
+    "code": "0312.KL",
+    "name": "OFB"
+  },
+  {
+    "code": "0313.KL",
+    "name": "BWYS"
+  },
+  {
+    "code": "0315.KL",
+    "name": "KUCINGKO"
+  },
+  {
+    "code": "0316.KL",
+    "name": "SCB"
+  },
+  {
+    "code": "0317.KL",
+    "name": "EPB"
+  },
+  {
+    "code": "0318.KL",
+    "name": "ELRIDGE"
+  },
+  {
+    "code": "0319.KL",
+    "name": "VTC"
+  },
+  {
+    "code": "0320.KL",
+    "name": "HAWK"
+  },
+  {
+    "code": "0321.KL",
+    "name": "SDCG"
+  },
+  {
+    "code": "0322.KL",
+    "name": "KHB"
+  },
+  {
+    "code": "0323.KL",
+    "name": "CREST"
+  },
+  {
+    "code": "0325.KL",
+    "name": "NE"
+  },
+  {
+    "code": "0326.KL",
+    "name": "SORENTO"
+  },
+  {
+    "code": "0327.KL",
+    "name": "OBHB"
+  },
+  {
+    "code": "0328.KL",
+    "name": "3REN"
+  },
+  {
+    "code": "0329.KL",
+    "name": "METRO"
+  },
+  {
+    "code": "0330.KL",
+    "name": "SUPREME"
+  },
+  {
+    "code": "0331.KL",
+    "name": "CRPMATE"
+  },
+  {
+    "code": "0332.KL",
+    "name": "TOPVISN"
+  },
+  {
+    "code": "0333.KL",
+    "name": "VANZO"
+  },
+  {
+    "code": "0335.KL",
+    "name": "CARLORINO"
+  },
+  {
+    "code": "0336.KL",
+    "name": "WINSTAR"
+  },
+  {
+    "code": "0337.KL",
+    "name": "SET"
+  },
+  {
+    "code": "0338.KL",
+    "name": "KOPI"
+  },
+  {
+    "code": "0339.KL",
+    "name": "CBHB"
+  },
+  {
+    "code": "0340.KL",
+    "name": "NORTHERN"
+  },
+  {
+    "code": "0341.KL",
+    "name": "COLFORM"
+  },
+  {
+    "code": "0342.KL",
+    "name": "RTECH"
+  },
+  {
+    "code": "0343.KL",
+    "name": "TECHSTORE"
+  },
+  {
+    "code": "0345.KL",
+    "name": "SUNLOGY"
+  },
+  {
+    "code": "0346.KL",
+    "name": "SALIRAN"
+  },
+  {
+    "code": "0347.KL",
+    "name": "DENGKIL"
+  },
+  {
+    "code": "0348.KL",
+    "name": "CLITE"
+  },
+  {
+    "code": "0349.KL",
+    "name": "SUMI"
+  },
+  {
+    "code": "0350.KL",
+    "name": "MSB"
+  },
+  {
+    "code": "0351.KL",
+    "name": "LSH"
+  },
+  {
+    "code": "0352.KL",
+    "name": "WTEC"
+  },
+  {
+    "code": "0353.KL",
+    "name": "WESTRVR"
+  },
+  {
+    "code": "0355.KL",
+    "name": "FIBRO"
+  },
+  {
+    "code": "0356.KL",
+    "name": "PEOPLE"
+  },
+  {
+    "code": "0357.KL",
+    "name": "OHM"
+  },
+  {
+    "code": "0358.KL",
+    "name": "ICTZONE"
+  },
+  {
+    "code": "0359.KL",
+    "name": "HKB"
+  },
+  {
+    "code": "0360.KL",
+    "name": "SAG"
+  },
+  {
+    "code": "0361.KL",
+    "name": "PMIBHD"
+  },
+  {
+    "code": "0362.KL",
+    "name": "ASM"
+  },
+  {
+    "code": "0363.KL",
+    "name": "PMCK"
+  },
+  {
+    "code": "0365.KL",
+    "name": "A1AKK"
+  },
+  {
+    "code": "0366.KL",
+    "name": "ICENTS"
+  },
+  {
+    "code": "0367.KL",
+    "name": "ENPRO"
+  },
+  {
+    "code": "0368.KL",
+    "name": "OXB"
+  },
+  {
+    "code": "0369.KL",
+    "name": "JSSOLAR"
+  },
+  {
+    "code": "0370.KL",
+    "name": "XPB"
+  },
+  {
+    "code": "0371.KL",
+    "name": "CAMAROE"
+  },
+  {
+    "code": "0372.KL",
+    "name": "CHEEDING"
+  },
+  {
+    "code": "0373.KL",
+    "name": "VERDANT"
+  },
+  {
+    "code": "0375.KL",
+    "name": "THMY"
+  },
+  {
+    "code": "0376.KL",
+    "name": "IAB"
+  },
+  {
+    "code": "0377.KL",
+    "name": "POWER"
+  },
+  {
+    "code": "0378.KL",
+    "name": "FAMIERA"
+  },
+  {
+    "code": "0379.KL",
+    "name": "PMW"
+  },
+  {
+    "code": "0380.KL",
+    "name": "AQUAWALK"
+  },
+  {
+    "code": "0381.KL",
+    "name": "POLYMER"
+  },
+  {
+    "code": "0382.KL",
+    "name": "FOODIE"
+  },
+  {
+    "code": "0383.KL",
+    "name": "PSP"
+  },
+  {
+    "code": "0385.KL",
+    "name": "BMS"
+  },
+  {
+    "code": "0386.KL",
+    "name": "SBS"
+  },
+  {
+    "code": "0387.KL",
+    "name": "GHS"
+  },
+  {
+    "code": "0388.KL",
+    "name": "SEMICO"
+  },
+  {
+    "code": "0389.KL",
+    "name": "OGM"
+  },
+  {
+    "code": "0390.KL",
+    "name": "ISF"
+  },
+  {
+    "code": "0391.KL",
+    "name": "AMBEST"
+  },
+  {
+    "code": "0392.KL",
+    "name": "KEEMING"
+  },
+  {
+    "code": "0393.KL",
+    "name": "TEAMSTR"
+  },
+  {
+    "code": "0395.KL",
+    "name": "OGX"
+  },
+  {
+    "code": "0396.KL",
+    "name": "ADNEX"
+  },
+  {
+    "code": "0397.KL",
+    "name": "5ER"
+  },
+  {
+    "code": "0398.KL",
+    "name": "GDGROUP"
+  },
+  {
+    "code": "0399.KL",
+    "name": "AMS"
+  },
+  {
+    "code": "0450.KL",
+    "name": "MFGROUP"
+  },
+  {
+    "code": "0451.KL",
+    "name": "INSPACE"
+  },
+  {
+    "code": "0452.KL",
+    "name": "GOLDLI"
+  },
+  {
+    "code": "0453.KL",
+    "name": "EIPOWER"
+  },
+  {
+    "code": "0455.KL",
+    "name": "BUSCAP"
+  },
+  {
+    "code": "0456.KL",
+    "name": "MMCS"
+  },
+  {
+    "code": "0457.KL",
+    "name": "PENTECH"
+  },
+  {
+    "code": "0458.KL",
+    "name": "ELSA"
+  },
+  {
+    "code": "0459.KL",
+    "name": "SUM"
+  },
+  {
+    "code": "0460.KL",
+    "name": "HSSBAKERY"
+  },
+  {
+    "code": "0461.KL",
+    "name": "RT"
+  },
+  {
     "code": "1015.KL",
-    "name": "AFFIN"
+    "name": "AMBANK"
   },
   {
     "code": "1023.KL",
     "name": "CIMB"
+  },
+  {
+    "code": "1058.KL",
+    "name": "MANULFE"
   },
   {
     "code": "1066.KL",
@@ -13,7 +1401,11 @@
   },
   {
     "code": "1082.KL",
-    "name": "HLBANK"
+    "name": "HLFG"
+  },
+  {
+    "code": "1147.KL",
+    "name": "GOB"
   },
   {
     "code": "1155.KL",
@@ -21,802 +1413,2890 @@
   },
   {
     "code": "1163.KL",
-    "name": "AMBANK"
+    "name": "ALLIANZ"
+  },
+  {
+    "code": "1171.KL",
+    "name": "MBSB"
+  },
+  {
+    "code": "1198.KL",
+    "name": "MAA"
+  },
+  {
+    "code": "1287.KL",
+    "name": "EXSIMHB"
   },
   {
     "code": "1295.KL",
     "name": "PBBANK"
   },
   {
-    "code": "2488.KL",
-    "name": "AMMB"
+    "code": "1368.KL",
+    "name": "EDGENTA"
   },
   {
-    "code": "5209.KL",
-    "name": "BIMB"
+    "code": "1481.KL",
+    "name": "ASB"
   },
   {
-    "code": "5819.KL",
-    "name": "HLFG"
+    "code": "1503.KL",
+    "name": "GUOCO"
   },
   {
-    "code": "2321.KL",
-    "name": "ALLIANZ"
+    "code": "1538.KL",
+    "name": "SYMLIFE"
   },
   {
-    "code": "7243.KL",
-    "name": "LPI"
+    "code": "1562.KL",
+    "name": "SPTOTO"
   },
   {
-    "code": "7234.KL",
-    "name": "MNRB"
-  },
-  {
-    "code": "4863.KL",
-    "name": "TM"
-  },
-  {
-    "code": "6888.KL",
-    "name": "AXIATA"
-  },
-  {
-    "code": "6947.KL",
-    "name": "CELCOMDIGI"
-  },
-  {
-    "code": "1171.KL",
-    "name": "VITROX"
-  },
-  {
-    "code": "5214.KL",
-    "name": "MPI"
-  },
-  {
-    "code": "5218.KL",
-    "name": "INARI"
-  },
-  {
-    "code": "5259.KL",
-    "name": "ELSOFT"
-  },
-  {
-    "code": "0241.KL",
-    "name": "PMETAL"
-  },
-  {
-    "code": "9792.KL",
-    "name": "OCK"
-  },
-  {
-    "code": "5007.KL",
-    "name": "GDEX"
-  },
-  {
-    "code": "5267.KL",
-    "name": "REDTONE"
-  },
-  {
-    "code": "4235.KL",
-    "name": "TIMEDOTCOM"
-  },
-  {
-    "code": "5079.KL",
-    "name": "MYEG"
-  },
-  {
-    "code": "0138.KL",
-    "name": "FRONTKN"
-  },
-  {
-    "code": "7216.KL",
-    "name": "VSI"
-  },
-  {
-    "code": "5241.KL",
-    "name": "DUFU"
-  },
-  {
-    "code": "5222.KL",
-    "name": "REACH"
-  },
-  {
-    "code": "5347.KL",
-    "name": "TENAGA"
-  },
-  {
-    "code": "5681.KL",
-    "name": "PETGAS"
-  },
-  {
-    "code": "5183.KL",
-    "name": "PCHEM"
-  },
-  {
-    "code": "3816.KL",
-    "name": "MISC"
-  },
-  {
-    "code": "5110.KL",
-    "name": "VELESTO"
-  },
-  {
-    "code": "3867.KL",
-    "name": "MALAKOF"
-  },
-  {
-    "code": "7277.KL",
-    "name": "DIALOG"
-  },
-  {
-    "code": "5071.KL",
-    "name": "CARIMIN"
+    "code": "1589.KL",
+    "name": "IWCITY"
   },
   {
     "code": "1619.KL",
-    "name": "DAYANG"
+    "name": "DRBHCOM"
   },
   {
-    "code": "4456.KL",
-    "name": "DELEUM"
+    "code": "1643.KL",
+    "name": "LANDMRK"
   },
   {
-    "code": "7018.KL",
-    "name": "COASTAL"
-  },
-  {
-    "code": "1961.KL",
-    "name": "PETDAG"
-  },
-  {
-    "code": "5046.KL",
-    "name": "POSH"
-  },
-  {
-    "code": "3948.KL",
-    "name": "YINSON"
-  },
-  {
-    "code": "3336.KL",
-    "name": "IJM"
-  },
-  {
-    "code": "7077.KL",
-    "name": "GAMUDA"
-  },
-  {
-    "code": "5226.KL",
-    "name": "SPSETIA"
-  },
-  {
-    "code": "5254.KL",
-    "name": "GABUNGAN"
-  },
-  {
-    "code": "5051.KL",
+    "code": "1651.KL",
     "name": "MRCB"
   },
   {
-    "code": "5253.KL",
-    "name": "EKOVEST"
-  },
-  {
-    "code": "4006.KL",
-    "name": "LBS"
-  },
-  {
-    "code": "3476.KL",
-    "name": "KERJAYA"
-  },
-  {
-    "code": "5269.KL",
-    "name": "SUNCON"
-  },
-  {
-    "code": "5075.KL",
-    "name": "TAMBUN"
-  },
-  {
-    "code": "5162.KL",
-    "name": "ECONPILE"
-  },
-  {
-    "code": "3735.KL",
-    "name": "PRTASCO"
-  },
-  {
-    "code": "9601.KL",
-    "name": "GKENT"
-  },
-  {
-    "code": "3204.KL",
-    "name": "MATRIX"
-  },
-  {
-    "code": "5140.KL",
-    "name": "JAKS"
-  },
-  {
-    "code": "5085.KL",
-    "name": "MUDAJAYA"
-  },
-  {
-    "code": "5230.KL",
-    "name": "IKHMAS"
+    "code": "1694.KL",
+    "name": "MENANG"
   },
   {
     "code": "1724.KL",
     "name": "PARAMON"
   },
   {
-    "code": "9695.KL",
-    "name": "WASEONG"
+    "code": "1818.KL",
+    "name": "BURSA"
   },
   {
-    "code": "5138.KL",
-    "name": "HSL"
+    "code": "1899.KL",
+    "name": "BKAWAN"
   },
   {
-    "code": "8621.KL",
-    "name": "MUHIBAH"
+    "code": "1929.KL",
+    "name": "CHINTEK"
   },
   {
-    "code": "6963.KL",
-    "name": "HUAYANG"
-  },
-  {
-    "code": "4294.KL",
-    "name": "SBCCORP"
-  },
-  {
-    "code": "5287.KL",
-    "name": "MITRA"
-  },
-  {
-    "code": "5322.KL",
-    "name": "BRIGHT"
-  },
-  {
-    "code": "6012.KL",
-    "name": "MKH"
-  },
-  {
-    "code": "5248.KL",
-    "name": "BATU"
-  },
-  {
-    "code": "7021.KL",
-    "name": "MULPHA"
-  },
-  {
-    "code": "5024.KL",
-    "name": "KRAMAT"
-  },
-  {
-    "code": "4383.KL",
-    "name": "NESTLE"
-  },
-  {
-    "code": "3417.KL",
-    "name": "CARLSBG"
-  },
-  {
-    "code": "7081.KL",
-    "name": "MAMEE"
-  },
-  {
-    "code": "5109.KL",
-    "name": "AJINOMOTO"
-  },
-  {
-    "code": "5099.KL",
-    "name": "AEONB"
-  },
-  {
-    "code": "7084.KL",
-    "name": "QL"
-  },
-  {
-    "code": "5178.KL",
-    "name": "TOMEI"
-  },
-  {
-    "code": "5052.KL",
-    "name": "POHKONG"
-  },
-  {
-    "code": "9628.KL",
-    "name": "CARING"
-  },
-  {
-    "code": "3050.KL",
-    "name": "NTPM"
-  },
-  {
-    "code": "1597.KL",
-    "name": "SPRITZER"
-  },
-  {
-    "code": "5029.KL",
-    "name": "BJTOTO"
-  },
-  {
-    "code": "4375.KL",
-    "name": "BERJAYA"
-  },
-  {
-    "code": "5258.KL",
-    "name": "BJCORP"
-  },
-  {
-    "code": "5196.KL",
-    "name": "BJFOOD"
-  },
-  {
-    "code": "4707.KL",
-    "name": "PHARMA"
-  },
-  {
-    "code": "5289.KL",
-    "name": "MODINS"
-  },
-  {
-    "code": "2194.KL",
+    "code": "1961.KL",
     "name": "IOICORP"
   },
   {
-    "code": "4065.KL",
-    "name": "PPB"
+    "code": "1996.KL",
+    "name": "KRETAM"
+  },
+  {
+    "code": "2038.KL",
+    "name": "NSOP"
+  },
+  {
+    "code": "2054.KL",
+    "name": "TDM"
+  },
+  {
+    "code": "2062.KL",
+    "name": "HARBOUR"
+  },
+  {
+    "code": "2089.KL",
+    "name": "UTDPLT"
+  },
+  {
+    "code": "2097.KL",
+    "name": "MBRIGHT"
+  },
+  {
+    "code": "2127.KL",
+    "name": "COMFORT"
+  },
+  {
+    "code": "2135.KL",
+    "name": "GOPENG"
+  },
+  {
+    "code": "2143.KL",
+    "name": "ECM"
+  },
+  {
+    "code": "2224.KL",
+    "name": "SDRED"
+  },
+  {
+    "code": "2259.KL",
+    "name": "TALAMT"
+  },
+  {
+    "code": "2283.KL",
+    "name": "ZELAN"
+  },
+  {
+    "code": "2291.KL",
+    "name": "GENP"
+  },
+  {
+    "code": "2305.KL",
+    "name": "AYER"
+  },
+  {
+    "code": "2429.KL",
+    "name": "TANCO"
   },
   {
     "code": "2445.KL",
     "name": "KLK"
   },
   {
-    "code": "4197.KL",
-    "name": "SIMEPLT"
-  },
-  {
-    "code": "4731.KL",
-    "name": "FGV"
-  },
-  {
-    "code": "4245.KL",
-    "name": "TDM"
-  },
-  {
-    "code": "5047.KL",
-    "name": "JTIASA"
-  },
-  {
-    "code": "5285.KL",
-    "name": "IHH"
-  },
-  {
-    "code": "6483.KL",
-    "name": "KPJ"
-  },
-  {
-    "code": "5168.KL",
-    "name": "HARTA"
-  },
-  {
-    "code": "7113.KL",
-    "name": "KOSSAN"
-  },
-  {
-    "code": "5176.KL",
-    "name": "HALEX"
-  },
-  {
-    "code": "5622.KL",
-    "name": "GPHAROS"
-  },
-  {
-    "code": "7080.KL",
-    "name": "HOVID"
-  },
-  {
-    "code": "5878.KL",
-    "name": "LHI"
-  },
-  {
-    "code": "2593.KL",
-    "name": "UMW"
-  },
-  {
-    "code": "1651.KL",
-    "name": "DRBHCOM"
-  },
-  {
-    "code": "4162.KL",
-    "name": "BSTEAD"
-  },
-  {
-    "code": "4758.KL",
-    "name": "CHINWEL"
-  },
-  {
-    "code": "7153.KL",
-    "name": "KIANJOO"
-  },
-  {
-    "code": "7298.KL",
-    "name": "HEVEABOARD"
-  },
-  {
-    "code": "5148.KL",
-    "name": "ENGTEX"
-  },
-  {
-    "code": "4359.KL",
-    "name": "LIONIND"
-  },
-  {
-    "code": "5038.KL",
-    "name": "LUXCHEM"
-  },
-  {
-    "code": "7250.KL",
-    "name": "UNIMECH"
-  },
-  {
-    "code": "5136.KL",
-    "name": "LAYHONG"
-  },
-  {
-    "code": "9083.KL",
-    "name": "BKAWAN"
-  },
-  {
-    "code": "3689.KL",
-    "name": "TEXCHEM"
-  },
-  {
-    "code": "5202.KL",
-    "name": "HLIND"
-  },
-  {
-    "code": "5086.KL",
-    "name": "LUSTER"
-  },
-  {
-    "code": "5090.KL",
-    "name": "HARBOUR"
-  },
-  {
-    "code": "5131.KL",
-    "name": "LBCAP"
-  },
-  {
-    "code": "5180.KL",
-    "name": "NOTION"
-  },
-  {
-    "code": "5246.KL",
-    "name": "WELLCAL"
-  },
-  {
-    "code": "5215.KL",
-    "name": "MAGNI"
-  },
-  {
-    "code": "5237.KL",
-    "name": "MCE"
-  },
-  {
-    "code": "4502.KL",
-    "name": "PELIKAN"
-  },
-  {
-    "code": "7162.KL",
-    "name": "IPMUDA"
-  },
-  {
-    "code": "8419.KL",
-    "name": "POLY"
-  },
-  {
-    "code": "8524.KL",
-    "name": "TASEK"
-  },
-  {
-    "code": "9288.KL",
-    "name": "LHIND"
-  },
-  {
-    "code": "9016.KL",
-    "name": "EMICO"
-  },
-  {
-    "code": "7229.KL",
-    "name": "MIKROMB"
-  },
-  {
-    "code": "9102.KL",
-    "name": "WOODLAND"
-  },
-  {
-    "code": "9105.KL",
-    "name": "SEALINK"
-  },
-  {
-    "code": "9261.KL",
+    "code": "2453.KL",
     "name": "KLUANG"
   },
   {
-    "code": "5228.KL",
-    "name": "YEELEE"
+    "code": "2488.KL",
+    "name": "ABMB"
   },
   {
-    "code": "9830.KL",
-    "name": "COMCORP"
+    "code": "2542.KL",
+    "name": "RVIEW"
   },
   {
-    "code": "5001.KL",
-    "name": "APM"
+    "code": "2569.KL",
+    "name": "SBAGAN"
   },
   {
-    "code": "5020.KL",
-    "name": "JCBNEXT"
+    "code": "2593.KL",
+    "name": "UMCCA"
   },
   {
-    "code": "5065.KL",
-    "name": "OSK"
+    "code": "2607.KL",
+    "name": "INCKEN"
   },
   {
-    "code": "5053.KL",
-    "name": "ORIENT"
+    "code": "2658.KL",
+    "name": "AJI"
   },
   {
-    "code": "5077.KL",
-    "name": "JETSON"
+    "code": "2674.KL",
+    "name": "ALCOM"
   },
   {
-    "code": "7168.KL",
-    "name": "DUFU"
+    "code": "2682.KL",
+    "name": "PARKWD"
   },
   {
-    "code": "5026.KL",
-    "name": "MBMR"
+    "code": "2739.KL",
+    "name": "TECHNAX"
   },
   {
-    "code": "5014.KL",
-    "name": "MBF"
+    "code": "2755.KL",
+    "name": "FCW"
   },
   {
-    "code": "5156.KL",
+    "code": "2828.KL",
+    "name": "CIHLDG"
+  },
+  {
+    "code": "2836.KL",
+    "name": "CARLSBG"
+  },
+  {
+    "code": "2852.KL",
+    "name": "CMSB"
+  },
+  {
+    "code": "2984.KL",
+    "name": "FACBIND"
+  },
+  {
+    "code": "3018.KL",
+    "name": "OLYMPIA"
+  },
+  {
+    "code": "3026.KL",
+    "name": "DLADY"
+  },
+  {
+    "code": "3034.KL",
+    "name": "HAPSENG"
+  },
+  {
+    "code": "3042.KL",
+    "name": "PETRONM"
+  },
+  {
+    "code": "3069.KL",
+    "name": "MFCB"
+  },
+  {
+    "code": "3107.KL",
+    "name": "FIMACOR"
+  },
+  {
+    "code": "3158.KL",
+    "name": "YNHPROP"
+  },
+  {
+    "code": "3174.KL",
+    "name": "L&G"
+  },
+  {
+    "code": "3182.KL",
+    "name": "GENTING"
+  },
+  {
+    "code": "3204.KL",
+    "name": "GKENT"
+  },
+  {
+    "code": "3239.KL",
+    "name": "BJASSET"
+  },
+  {
+    "code": "3247.KL",
+    "name": "GUH"
+  },
+  {
+    "code": "3255.KL",
+    "name": "HEIM"
+  },
+  {
+    "code": "3298.KL",
+    "name": "HEXZA"
+  },
+  {
+    "code": "3301.KL",
+    "name": "HLIND"
+  },
+  {
+    "code": "3336.KL",
+    "name": "IJM"
+  },
+  {
+    "code": "3379.KL",
     "name": "INSAS"
   },
   {
-    "code": "5247.KL",
-    "name": "PRIVASIA"
+    "code": "3395.KL",
+    "name": "BJCORP"
   },
   {
-    "code": "9945.KL",
-    "name": "GBGAQRS"
+    "code": "3417.KL",
+    "name": "E&O"
   },
   {
-    "code": "5164.KL",
-    "name": "ICAP"
+    "code": "3441.KL",
+    "name": "JOHAN"
   },
   {
-    "code": "3492.KL",
-    "name": "KLCCP"
+    "code": "3476.KL",
+    "name": "KSENG"
   },
   {
-    "code": "6521.KL",
-    "name": "SUNREIT"
+    "code": "3514.KL",
+    "name": "MARCO"
   },
   {
-    "code": "4715.KL",
-    "name": "KLCC"
+    "code": "3557.KL",
+    "name": "ECOFIRS"
+  },
+  {
+    "code": "3565.KL",
+    "name": "WCEHB"
+  },
+  {
+    "code": "3573.KL",
+    "name": "LIENHOE"
+  },
+  {
+    "code": "3611.KL",
+    "name": "PGLOBE"
+  },
+  {
+    "code": "3662.KL",
+    "name": "MFLOUR"
+  },
+  {
+    "code": "3689.KL",
+    "name": "F&N"
+  },
+  {
+    "code": "3719.KL",
+    "name": "PANAMY"
+  },
+  {
+    "code": "3743.KL",
+    "name": "SUNSURIA"
+  },
+  {
+    "code": "3778.KL",
+    "name": "MELEWAR"
+  },
+  {
+    "code": "3794.KL",
+    "name": "MCEMENT"
+  },
+  {
+    "code": "3816.KL",
+    "name": "MISC"
+  },
+  {
+    "code": "3859.KL",
+    "name": "MAGNUM"
+  },
+  {
+    "code": "3867.KL",
+    "name": "MPI"
+  },
+  {
+    "code": "3883.KL",
+    "name": "MUDA"
+  },
+  {
+    "code": "3891.KL",
+    "name": "MUIIND"
+  },
+  {
+    "code": "3905.KL",
+    "name": "MULPHA"
+  },
+  {
+    "code": "3913.KL",
+    "name": "MUIPROP"
+  },
+  {
+    "code": "3948.KL",
+    "name": "DUTALND"
+  },
+  {
+    "code": "4006.KL",
+    "name": "ORIENT"
+  },
+  {
+    "code": "4022.KL",
+    "name": "MAXIM"
+  },
+  {
+    "code": "4057.KL",
+    "name": "ASIAPAC"
+  },
+  {
+    "code": "4065.KL",
+    "name": "PPB"
+  },
+  {
+    "code": "4081.KL",
+    "name": "PMCORP"
+  },
+  {
+    "code": "4162.KL",
+    "name": "BAT"
+  },
+  {
+    "code": "4197.KL",
+    "name": "SIME"
+  },
+  {
+    "code": "4219.KL",
+    "name": "BPROP"
+  },
+  {
+    "code": "4235.KL",
+    "name": "LIONIND"
+  },
+  {
+    "code": "4243.KL",
+    "name": "WTK"
+  },
+  {
+    "code": "4251.KL",
+    "name": "IBHD"
+  },
+  {
+    "code": "4286.KL",
+    "name": "SEAL"
+  },
+  {
+    "code": "4316.KL",
+    "name": "SHCHAN"
+  },
+  {
+    "code": "4324.KL",
+    "name": "HENGYUAN"
+  },
+  {
+    "code": "4359.KL",
+    "name": "TURIYA"
+  },
+  {
+    "code": "4375.KL",
+    "name": "SMI"
+  },
+  {
+    "code": "4383.KL",
+    "name": "JTIASA"
   },
   {
     "code": "4405.KL",
-    "name": "SREIT"
+    "name": "TCHONG"
   },
   {
-    "code": "5291.KL",
-    "name": "GOLDIS"
+    "code": "4456.KL",
+    "name": "DNEX"
+  },
+  {
+    "code": "4464.KL",
+    "name": "PHB"
+  },
+  {
+    "code": "4502.KL",
+    "name": "MEDIA"
+  },
+  {
+    "code": "4596.KL",
+    "name": "SAPRES"
+  },
+  {
+    "code": "4634.KL",
+    "name": "POS"
   },
   {
     "code": "4677.KL",
     "name": "YTL"
   },
   {
-    "code": "1562.KL",
-    "name": "YTLPOWR"
+    "code": "4707.KL",
+    "name": "NESTLE"
   },
   {
-    "code": "3182.KL",
+    "code": "4715.KL",
     "name": "GENM"
   },
   {
-    "code": "4324.KL",
-    "name": "GENTING"
+    "code": "4723.KL",
+    "name": "JAKS"
   },
   {
-    "code": "2836.KL",
-    "name": "MAHB"
+    "code": "4731.KL",
+    "name": "SCIENTX"
+  },
+  {
+    "code": "4758.KL",
+    "name": "ANCOMNY"
+  },
+  {
+    "code": "4847.KL",
+    "name": "EPICON"
+  },
+  {
+    "code": "4863.KL",
+    "name": "TM"
+  },
+  {
+    "code": "4995.KL",
+    "name": "VERSATL"
+  },
+  {
+    "code": "5000.KL",
+    "name": "HUMEIND"
+  },
+  {
+    "code": "5001.KL",
+    "name": "MIECO"
+  },
+  {
+    "code": "5005.KL",
+    "name": "UNISEM"
+  },
+  {
+    "code": "5006.KL",
+    "name": "VARIA"
+  },
+  {
+    "code": "5007.KL",
+    "name": "CHINWEL"
+  },
+  {
+    "code": "5008.KL",
+    "name": "HARISON"
+  },
+  {
+    "code": "5009.KL",
+    "name": "WTHORSE"
+  },
+  {
+    "code": "5010.KL",
+    "name": "TONGHER"
+  },
+  {
+    "code": "5011.KL",
+    "name": "MSNIAGA"
+  },
+  {
+    "code": "5012.KL",
+    "name": "TAANN"
+  },
+  {
+    "code": "5015.KL",
+    "name": "APM"
+  },
+  {
+    "code": "5016.KL",
+    "name": "WARISAN"
+  },
+  {
+    "code": "5020.KL",
+    "name": "GLOMAC"
+  },
+  {
+    "code": "5021.KL",
+    "name": "AYS"
+  },
+  {
+    "code": "5022.KL",
+    "name": "PAOS"
+  },
+  {
+    "code": "5024.KL",
+    "name": "HUPSENG"
+  },
+  {
+    "code": "5025.KL",
+    "name": "AURO"
+  },
+  {
+    "code": "5026.KL",
+    "name": "MHC"
   },
   {
     "code": "5027.KL",
-    "name": "BURSA"
+    "name": "KMLOONG"
+  },
+  {
+    "code": "5028.KL",
+    "name": "HTPADU"
+  },
+  {
+    "code": "5029.KL",
+    "name": "FAREAST"
+  },
+  {
+    "code": "5031.KL",
+    "name": "TIMECOM"
+  },
+  {
+    "code": "5032.KL",
+    "name": "BIPORT"
+  },
+  {
+    "code": "5035.KL",
+    "name": "KNUSFOR"
+  },
+  {
+    "code": "5036.KL",
+    "name": "EDARAN"
+  },
+  {
+    "code": "5037.KL",
+    "name": "COMPUGT"
+  },
+  {
+    "code": "5038.KL",
+    "name": "KSL"
+  },
+  {
+    "code": "5040.KL",
+    "name": "MERIDIAN"
+  },
+  {
+    "code": "5041.KL",
+    "name": "PBA"
+  },
+  {
+    "code": "5042.KL",
+    "name": "TSRCAP"
+  },
+  {
+    "code": "5048.KL",
+    "name": "YB"
+  },
+  {
+    "code": "5049.KL",
+    "name": "CVIEW"
+  },
+  {
+    "code": "5053.KL",
+    "name": "OSK"
+  },
+  {
+    "code": "5054.KL",
+    "name": "TRC"
+  },
+  {
+    "code": "5056.KL",
+    "name": "ENGTEX"
+  },
+  {
+    "code": "5062.KL",
+    "name": "HUAYANG"
+  },
+  {
+    "code": "5065.KL",
+    "name": "ORNA"
+  },
+  {
+    "code": "5066.KL",
+    "name": "NTPM"
+  },
+  {
+    "code": "5068.KL",
+    "name": "LUSTER"
+  },
+  {
+    "code": "5069.KL",
+    "name": "BLDPLNT"
+  },
+  {
+    "code": "5070.KL",
+    "name": "PRTASCO"
+  },
+  {
+    "code": "5071.KL",
+    "name": "COASTAL"
+  },
+  {
+    "code": "5072.KL",
+    "name": "HIAPTEK"
+  },
+  {
+    "code": "5073.KL",
+    "name": "NAIM"
+  },
+  {
+    "code": "5075.KL",
+    "name": "PLENITU"
+  },
+  {
+    "code": "5077.KL",
+    "name": "MAYBULK"
+  },
+  {
+    "code": "5078.KL",
+    "name": "M&G"
+  },
+  {
+    "code": "5079.KL",
+    "name": "ONEGLOVE"
+  },
+  {
+    "code": "5080.KL",
+    "name": "POHKONG"
+  },
+  {
+    "code": "5081.KL",
+    "name": "EIG"
+  },
+  {
+    "code": "5084.KL",
+    "name": "IBRACO"
+  },
+  {
+    "code": "5085.KL",
+    "name": "MUDAJYA"
+  },
+  {
+    "code": "5087.KL",
+    "name": "MYCRON"
+  },
+  {
+    "code": "5088.KL",
+    "name": "APEX"
+  },
+  {
+    "code": "5090.KL",
+    "name": "MEDIAC"
+  },
+  {
+    "code": "5094.KL",
+    "name": "CSCSTEL"
+  },
+  {
+    "code": "5095.KL",
+    "name": "HEVEA"
+  },
+  {
+    "code": "5098.KL",
+    "name": "MASTEEL"
+  },
+  {
+    "code": "5099.KL",
+    "name": "CAPITALA"
+  },
+  {
+    "code": "5100.KL",
+    "name": "BPPLAS"
+  },
+  {
+    "code": "5101.KL",
+    "name": "EVERGRN"
+  },
+  {
+    "code": "5102.KL",
+    "name": "GCB"
+  },
+  {
+    "code": "5104.KL",
+    "name": "CNH"
+  },
+  {
+    "code": "5105.KL",
+    "name": "CANONE"
+  },
+  {
+    "code": "5106.KL",
+    "name": "AXREIT"
+  },
+  {
+    "code": "5107.KL",
+    "name": "IQGROUP"
+  },
+  {
+    "code": "5108.KL",
+    "name": "ICAP"
+  },
+  {
+    "code": "5109.KL",
+    "name": "YTLREIT"
+  },
+  {
+    "code": "5110.KL",
+    "name": "UOAREIT"
+  },
+  {
+    "code": "5111.KL",
+    "name": "TWRREIT"
+  },
+  {
+    "code": "5112.KL",
+    "name": "THPLANT"
+  },
+  {
+    "code": "5113.KL",
+    "name": "RSAWIT"
+  },
+  {
+    "code": "5115.KL",
+    "name": "ALAM"
+  },
+  {
+    "code": "5116.KL",
+    "name": "ALAQAR"
+  },
+  {
+    "code": "5120.KL",
+    "name": "AMFIRST"
+  },
+  {
+    "code": "5121.KL",
+    "name": "HEKTAR"
+  },
+  {
+    "code": "5123.KL",
+    "name": "SENTRAL"
+  },
+  {
+    "code": "5125.KL",
+    "name": "PANTECH"
+  },
+  {
+    "code": "5126.KL",
+    "name": "SOP"
+  },
+  {
+    "code": "5127.KL",
+    "name": "ARREIT"
+  },
+  {
+    "code": "5129.KL",
+    "name": "MELATI"
+  },
+  {
+    "code": "5130.KL",
+    "name": "ATRIUM"
+  },
+  {
+    "code": "5131.KL",
+    "name": "ZHULIAN"
+  },
+  {
+    "code": "5132.KL",
+    "name": "DELEUM"
+  },
+  {
+    "code": "5133.KL",
+    "name": "PENERGY"
+  },
+  {
+    "code": "5134.KL",
+    "name": "SAB"
+  },
+  {
+    "code": "5135.KL",
+    "name": "SWKPLNT"
+  },
+  {
+    "code": "5136.KL",
+    "name": "HEXTECH"
+  },
+  {
+    "code": "5138.KL",
+    "name": "HSPLANT"
+  },
+  {
+    "code": "5139.KL",
+    "name": "AEONCR"
+  },
+  {
+    "code": "5140.KL",
+    "name": "TASCO"
+  },
+  {
+    "code": "5141.KL",
+    "name": "DAYANG"
+  },
+  {
+    "code": "5142.KL",
+    "name": "WASCO"
+  },
+  {
+    "code": "5143.KL",
+    "name": "LUXCHEM"
+  },
+  {
+    "code": "5145.KL",
+    "name": "SEALINK"
+  },
+  {
+    "code": "5147.KL",
+    "name": "SAMCHEM"
+  },
+  {
+    "code": "5148.KL",
+    "name": "UEMS"
+  },
+  {
+    "code": "5149.KL",
+    "name": "TAS"
+  },
+  {
+    "code": "5151.KL",
+    "name": "HEXTAR"
+  },
+  {
+    "code": "5152.KL",
+    "name": "MBL"
+  },
+  {
+    "code": "5156.KL",
+    "name": "XDL"
+  },
+  {
+    "code": "5157.KL",
+    "name": "SG"
+  },
+  {
+    "code": "5159.KL",
+    "name": "YOCB"
+  },
+  {
+    "code": "5160.KL",
+    "name": "HOMERIZ"
+  },
+  {
+    "code": "5161.KL",
+    "name": "JCY"
+  },
+  {
+    "code": "5162.KL",
+    "name": "VSTECS"
+  },
+  {
+    "code": "5163.KL",
+    "name": "SEB"
+  },
+  {
+    "code": "5165.KL",
+    "name": "DFCITY"
+  },
+  {
+    "code": "5166.KL",
+    "name": "CYBERE"
+  },
+  {
+    "code": "5167.KL",
+    "name": "TURBO"
+  },
+  {
+    "code": "5168.KL",
+    "name": "HARTA"
+  },
+  {
+    "code": "5169.KL",
+    "name": "HOHUP"
+  },
+  {
+    "code": "5171.KL",
+    "name": "KIMLUN"
+  },
+  {
+    "code": "5172.KL",
+    "name": "SINARAN"
+  },
+  {
+    "code": "5173.KL",
+    "name": "SYGROUP"
+  },
+  {
+    "code": "5176.KL",
+    "name": "SUNREIT"
+  },
+  {
+    "code": "5178.KL",
+    "name": "INGENIEU"
+  },
+  {
+    "code": "5180.KL",
+    "name": "CLMT"
+  },
+  {
+    "code": "5182.KL",
+    "name": "AVALAND"
+  },
+  {
+    "code": "5183.KL",
+    "name": "PCHEM"
+  },
+  {
+    "code": "5184.KL",
+    "name": "CYPARK"
+  },
+  {
+    "code": "5185.KL",
+    "name": "AFFIN"
+  },
+  {
+    "code": "5186.KL",
+    "name": "MHB"
+  },
+  {
+    "code": "5187.KL",
+    "name": "HBGLOB"
+  },
+  {
+    "code": "5188.KL",
+    "name": "CNOUHUA"
+  },
+  {
+    "code": "5190.KL",
+    "name": "BENALEC"
+  },
+  {
+    "code": "5191.KL",
+    "name": "TAMBUN"
+  },
+  {
+    "code": "5192.KL",
+    "name": "ECEXCEL"
+  },
+  {
+    "code": "5195.KL",
+    "name": "CENSOF"
+  },
+  {
+    "code": "5196.KL",
+    "name": "BJFOOD"
+  },
+  {
+    "code": "5197.KL",
+    "name": "FLBHD"
+  },
+  {
+    "code": "5198.KL",
+    "name": "AFUJIYA"
+  },
+  {
+    "code": "5199.KL",
+    "name": "HIBISCS"
+  },
+  {
+    "code": "5200.KL",
+    "name": "UOADEV"
+  },
+  {
+    "code": "5202.KL",
+    "name": "MSM"
+  },
+  {
+    "code": "5204.KL",
+    "name": "AWANTEC"
+  },
+  {
+    "code": "5205.KL",
+    "name": "SENDAI"
+  },
+  {
+    "code": "5207.KL",
+    "name": "SBCCORP"
+  },
+  {
+    "code": "5208.KL",
+    "name": "EITA"
+  },
+  {
+    "code": "5209.KL",
+    "name": "GASMSIA"
+  },
+  {
+    "code": "5210.KL",
+    "name": "ARMADA"
+  },
+  {
+    "code": "5211.KL",
+    "name": "SUNWAY"
+  },
+  {
+    "code": "5212.KL",
+    "name": "PAVREIT"
+  },
+  {
+    "code": "5216.KL",
+    "name": "NEXG"
+  },
+  {
+    "code": "5218.KL",
+    "name": "VANTNRG"
+  },
+  {
+    "code": "5219.KL",
+    "name": "PESTEC"
+  },
+  {
+    "code": "5220.KL",
+    "name": "GLOTEC"
+  },
+  {
+    "code": "5223.KL",
+    "name": "MENTIGA"
+  },
+  {
+    "code": "5225.KL",
+    "name": "IHH"
+  },
+  {
+    "code": "5226.KL",
+    "name": "GBGAQRS"
+  },
+  {
+    "code": "5227.KL",
+    "name": "IGBREIT"
+  },
+  {
+    "code": "5228.KL",
+    "name": "ELKDESA"
+  },
+  {
+    "code": "5230.KL",
+    "name": "TUNEPRO"
+  },
+  {
+    "code": "5231.KL",
+    "name": "PBSB"
+  },
+  {
+    "code": "5232.KL",
+    "name": "LEONFB"
+  },
+  {
+    "code": "5235SS.KL",
+    "name": "KLCC"
+  },
+  {
+    "code": "5236.KL",
+    "name": "MATRIX"
+  },
+  {
+    "code": "5238.KL",
+    "name": "AAX"
+  },
+  {
+    "code": "5239.KL",
+    "name": "TITIJYA"
+  },
+  {
+    "code": "5242.KL",
+    "name": "SOLID"
+  },
+  {
+    "code": "5243.KL",
+    "name": "VELESTO"
+  },
+  {
+    "code": "5246.KL",
+    "name": "WPRTS"
+  },
+  {
+    "code": "5247.KL",
+    "name": "KAREX"
+  },
+  {
+    "code": "5248.KL",
+    "name": "BAUTO"
+  },
+  {
+    "code": "5249.KL",
+    "name": "IOIPG"
+  },
+  {
+    "code": "5250.KL",
+    "name": "SEM"
+  },
+  {
+    "code": "5252.KL",
+    "name": "SASBADI"
+  },
+  {
+    "code": "5253.KL",
+    "name": "ECONBHD"
+  },
+  {
+    "code": "5255.KL",
+    "name": "LFG"
+  },
+  {
+    "code": "5257.KL",
+    "name": "CARIMIN"
+  },
+  {
+    "code": "5258.KL",
+    "name": "BIMB"
+  },
+  {
+    "code": "5259.KL",
+    "name": "AVANGAAD"
+  },
+  {
+    "code": "5260.KL",
+    "name": "OWG"
+  },
+  {
+    "code": "5263.KL",
+    "name": "SUNCON"
+  },
+  {
+    "code": "5264.KL",
+    "name": "MALAKOF"
+  },
+  {
+    "code": "5265.KL",
+    "name": "OASIS"
+  },
+  {
+    "code": "5267.KL",
+    "name": "XINHWA"
+  },
+  {
+    "code": "5269.KL",
+    "name": "ALSREIT"
+  },
+  {
+    "code": "5271.KL",
+    "name": "PECCA"
+  },
+  {
+    "code": "5272.KL",
+    "name": "RANHILL"
+  },
+  {
+    "code": "5273.KL",
+    "name": "CHINHIN"
+  },
+  {
+    "code": "5274.KL",
+    "name": "HLCAP"
+  },
+  {
+    "code": "5275.KL",
+    "name": "MYNEWS"
+  },
+  {
+    "code": "5276.KL",
+    "name": "DANCO"
+  },
+  {
+    "code": "5277.KL",
+    "name": "FPGROUP"
+  },
+  {
+    "code": "5278.KL",
+    "name": "RHONEMA"
+  },
+  {
+    "code": "5280.KL",
+    "name": "KIPREIT"
+  },
+  {
+    "code": "5281.KL",
+    "name": "ADVCON"
+  },
+  {
+    "code": "5283.KL",
+    "name": "EWICAP"
+  },
+  {
+    "code": "5284.KL",
+    "name": "LCTITAN"
+  },
+  {
+    "code": "5285.KL",
+    "name": "SDG"
+  },
+  {
+    "code": "5286.KL",
+    "name": "MI"
+  },
+  {
+    "code": "5288.KL",
+    "name": "SIMEPROP"
+  },
+  {
+    "code": "5289.KL",
+    "name": "TECHBND"
+  },
+  {
+    "code": "5291.KL",
+    "name": "HPMT"
+  },
+  {
+    "code": "5292.KL",
+    "name": "UWC"
+  },
+  {
+    "code": "5293.KL",
+    "name": "AME"
+  },
+  {
+    "code": "5295.KL",
+    "name": "INNATURE"
+  },
+  {
+    "code": "5296.KL",
+    "name": "MRDIY"
+  },
+  {
+    "code": "5297.KL",
+    "name": "TJSETIA"
+  },
+  {
+    "code": "5298.KL",
+    "name": "OMH"
+  },
+  {
+    "code": "5299.KL",
+    "name": "IGBCR"
+  },
+  {
+    "code": "5300.KL",
+    "name": "YENHER"
+  },
+  {
+    "code": "5301.KL",
+    "name": "CTOS"
+  },
+  {
+    "code": "5302.KL",
+    "name": "ATECH"
+  },
+  {
+    "code": "5303.KL",
+    "name": "SWIFT"
+  },
+  {
+    "code": "5305.KL",
+    "name": "SENHENG"
+  },
+  {
+    "code": "5306.KL",
+    "name": "FFB"
+  },
+  {
+    "code": "5307.KL",
+    "name": "AMEREIT"
+  },
+  {
+    "code": "5308.KL",
+    "name": "SENFONG"
+  },
+  {
+    "code": "5309.KL",
+    "name": "ITMAX"
+  },
+  {
+    "code": "5310.KL",
+    "name": "KITACON"
+  },
+  {
+    "code": "5311.KL",
+    "name": "CEB"
+  },
+  {
+    "code": "5313.KL",
+    "name": "RADIUM"
+  },
+  {
+    "code": "5315.KL",
+    "name": "SKYWLD"
+  },
+  {
+    "code": "5316.KL",
+    "name": "MSTGOLF"
+  },
+  {
+    "code": "5317.KL",
+    "name": "CPETECH"
+  },
+  {
+    "code": "5318.KL",
+    "name": "DXN"
+  },
+  {
+    "code": "5319.KL",
+    "name": "MKHOP"
+  },
+  {
+    "code": "5320.KL",
+    "name": "PLINTAS"
+  },
+  {
+    "code": "5321.KL",
+    "name": "KEYFIELD"
+  },
+  {
+    "code": "5322.KL",
+    "name": "FEYTECH"
+  },
+  {
+    "code": "5323.KL",
+    "name": "JPG"
+  },
+  {
+    "code": "5325.KL",
+    "name": "WELLCHIP"
+  },
+  {
+    "code": "5326.KL",
+    "name": "99SMART"
+  },
+  {
+    "code": "5327.KL",
+    "name": "MEGAFB"
+  },
+  {
+    "code": "5328.KL",
+    "name": "LWSABAH"
+  },
+  {
+    "code": "5329.KL",
+    "name": "AZAMJAYA"
+  },
+  {
+    "code": "5330.KL",
+    "name": "TMK"
+  },
+  {
+    "code": "5331.KL",
+    "name": "PGLOBAL"
+  },
+  {
+    "code": "5332.KL",
+    "name": "REACHTEN"
+  },
+  {
+    "code": "5335.KL",
+    "name": "HI"
+  },
+  {
+    "code": "5336.KL",
+    "name": "CKI"
+  },
+  {
+    "code": "5337.KL",
+    "name": "ECOSHOP"
+  },
+  {
+    "code": "5338.KL",
+    "name": "PARADIGM"
+  },
+  {
+    "code": "5340.KL",
+    "name": "UMSINT"
+  },
+  {
+    "code": "5341.KL",
+    "name": "LACMED"
+  },
+  {
+    "code": "5343.KL",
+    "name": "GENERGY"
+  },
+  {
+    "code": "5345.KL",
+    "name": "GEOHAN"
+  },
+  {
+    "code": "5346.KL",
+    "name": "HOCKSOON"
+  },
+  {
+    "code": "5347.KL",
+    "name": "TENAGA"
+  },
+  {
+    "code": "5348.KL",
+    "name": "ORKIM"
+  },
+  {
+    "code": "5351.KL",
+    "name": "EMPIRE"
+  },
+  {
+    "code": "5352.KL",
+    "name": "MTTSL"
+  },
+  {
+    "code": "5357.KL",
+    "name": "SKYECHIP"
+  },
+  {
+    "code": "5371.KL",
+    "name": "KIMHIN"
+  },
+  {
+    "code": "5398.KL",
+    "name": "GAMUDA"
+  },
+  {
+    "code": "5401.KL",
+    "name": "TROP"
+  },
+  {
+    "code": "5436.KL",
+    "name": "PERSTIM"
+  },
+  {
+    "code": "5517.KL",
+    "name": "SHANG"
+  },
+  {
+    "code": "5533.KL",
+    "name": "OCB"
+  },
+  {
+    "code": "5555.KL",
+    "name": "SUNMED"
+  },
+  {
+    "code": "5568.KL",
+    "name": "APB"
+  },
+  {
+    "code": "5576.KL",
+    "name": "MINHO"
+  },
+  {
+    "code": "5592.KL",
+    "name": "GCE"
+  },
+  {
+    "code": "5606.KL",
+    "name": "IGBB"
+  },
+  {
+    "code": "5614.KL",
+    "name": "NHB"
+  },
+  {
+    "code": "5622.KL",
+    "name": "PEB"
+  },
+  {
+    "code": "5649.KL",
+    "name": "GPHAROS"
+  },
+  {
+    "code": "5657.KL",
+    "name": "PARKSON"
+  },
+  {
+    "code": "5665.KL",
+    "name": "SSTEEL"
+  },
+  {
+    "code": "5673.KL",
+    "name": "JSB"
+  },
+  {
+    "code": "5681.KL",
+    "name": "PETDAG"
+  },
+  {
+    "code": "5703.KL",
+    "name": "MUHIBAH"
+  },
+  {
+    "code": "5738.KL",
+    "name": "CHHB"
+  },
+  {
+    "code": "5789.KL",
+    "name": "LBS"
+  },
+  {
+    "code": "5797.KL",
+    "name": "CHOOBEE"
+  },
+  {
+    "code": "5819.KL",
+    "name": "HLBANK"
+  },
+  {
+    "code": "5827.KL",
+    "name": "OIB"
+  },
+  {
+    "code": "5843.KL",
+    "name": "KPS"
+  },
+  {
+    "code": "5878.KL",
+    "name": "KPJ"
+  },
+  {
+    "code": "5908.KL",
+    "name": "DKSH"
+  },
+  {
+    "code": "5916.KL",
+    "name": "MSC"
+  },
+  {
+    "code": "5932.KL",
+    "name": "BPURI"
+  },
+  {
+    "code": "5983.KL",
+    "name": "MBMR"
+  },
+  {
+    "code": "6009.KL",
+    "name": "P&O"
+  },
+  {
+    "code": "6012.KL",
+    "name": "MAXIS"
+  },
+  {
+    "code": "6017.KL",
+    "name": "SHL"
+  },
+  {
+    "code": "6033.KL",
+    "name": "PETGAS"
+  },
+  {
+    "code": "6041.KL",
+    "name": "FARLIM"
+  },
+  {
+    "code": "6068.KL",
+    "name": "PCCS"
+  },
+  {
+    "code": "6076.KL",
+    "name": "ENCORP"
+  },
+  {
+    "code": "6084.KL",
+    "name": "STAR"
+  },
+  {
+    "code": "6114.KL",
+    "name": "MKH"
+  },
+  {
+    "code": "6139.KL",
+    "name": "TAKAFUL"
+  },
+  {
+    "code": "6149.KL",
+    "name": "METROD"
+  },
+  {
+    "code": "6173.KL",
+    "name": "BDB"
+  },
+  {
+    "code": "6181.KL",
+    "name": "MALTON"
+  },
+  {
+    "code": "6203.KL",
+    "name": "KHEESAN"
+  },
+  {
+    "code": "6211.KL",
+    "name": "KIALIM"
+  },
+  {
+    "code": "6254.KL",
+    "name": "PDZ"
+  },
+  {
+    "code": "6262.KL",
+    "name": "INNO"
+  },
+  {
+    "code": "6297.KL",
+    "name": "BOXPAK"
+  },
+  {
+    "code": "6351.KL",
+    "name": "AMWAY"
+  },
+  {
+    "code": "6378.KL",
+    "name": "BEDI"
   },
   {
     "code": "6399.KL",
     "name": "ASTRO"
   },
   {
-    "code": "9888.KL",
-    "name": "BAUTO"
-  },
-  {
-    "code": "5398.KL",
-    "name": "FIAMMA"
-  },
-  {
-    "code": "8583.KL",
-    "name": "HATARAN"
-  },
-  {
-    "code": "3557.KL",
-    "name": "FIMACOR"
-  },
-  {
-    "code": "2356.KL",
-    "name": "SELNGOR"
-  },
-  {
-    "code": "0003.KL",
-    "name": "AMPROP"
-  },
-  {
-    "code": "0005.KL",
-    "name": "CYCLECAR"
-  },
-  {
-    "code": "0007.KL",
-    "name": "LACMED"
-  },
-  {
-    "code": "0010.KL",
-    "name": "BCLIND"
-  },
-  {
-    "code": "0013.KL",
-    "name": "ARB"
-  },
-  {
-    "code": "0015.KL",
-    "name": "CUSCAPI"
-  },
-  {
-    "code": "0020.KL",
-    "name": "AMCORP"
-  },
-  {
-    "code": "0023.KL",
-    "name": "KOBAY"
-  },
-  {
-    "code": "0024.KL",
-    "name": "AMITRADE"
-  },
-  {
-    "code": "0027.KL",
-    "name": "ASIAFILE"
-  },
-  {
-    "code": "0029.KL",
-    "name": "DESTINI"
-  },
-  {
-    "code": "0038.KL",
-    "name": "AIMFLEX"
-  },
-  {
-    "code": "0040.KL",
-    "name": "AMDB"
-  },
-  {
-    "code": "0041.KL",
-    "name": "APEX"
-  },
-  {
-    "code": "0048.KL",
-    "name": "BORNOIL"
-  },
-  {
-    "code": "0052.KL",
-    "name": "AMFIRST"
-  },
-  {
-    "code": "0053.KL",
-    "name": "EUPE"
-  },
-  {
-    "code": "0065.KL",
-    "name": "AQRS"
-  },
-  {
-    "code": "0072.KL",
-    "name": "ALCOM"
-  },
-  {
-    "code": "0073.KL",
-    "name": "GREENBAY"
-  },
-  {
-    "code": "0075.KL",
-    "name": "BPD"
-  },
-  {
-    "code": "0076.KL",
-    "name": "DPS"
-  },
-  {
-    "code": "0082.KL",
-    "name": "BCB"
-  },
-  {
-    "code": "0099.KL",
-    "name": "CEKA"
-  },
-  {
-    "code": "0104.KL",
-    "name": "ANCOM"
-  },
-  {
-    "code": "0105.KL",
-    "name": "CAELY"
-  },
-  {
-    "code": "0109.KL",
-    "name": "AUXILIO"
-  },
-  {
-    "code": "0122.KL",
-    "name": "AWANTEC"
-  },
-  {
-    "code": "0135.KL",
+    "code": "6432.KL",
     "name": "APOLLO"
   },
   {
-    "code": "0143.KL",
-    "name": "CENSOF"
+    "code": "6459.KL",
+    "name": "MNRB"
   },
   {
-    "code": "0151.KL",
-    "name": "GLOBALTEC"
+    "code": "6483.KL",
+    "name": "KENANGA"
   },
   {
-    "code": "0152.KL",
-    "name": "AGESON"
+    "code": "6491.KL",
+    "name": "KFIMA"
   },
   {
-    "code": "0157.KL",
-    "name": "SAPNRG"
+    "code": "6521.KL",
+    "name": "SURIA"
   },
   {
-    "code": "0163.KL",
-    "name": "ZHULIAN"
+    "code": "6556.KL",
+    "name": "ANNJOO"
   },
   {
-    "code": "0166.KL",
+    "code": "6599.KL",
+    "name": "AEON"
+  },
+  {
+    "code": "6602.KL",
+    "name": "BCB"
+  },
+  {
+    "code": "6633.KL",
+    "name": "LHI"
+  },
+  {
+    "code": "6637.KL",
+    "name": "PNEPCB"
+  },
+  {
+    "code": "6718.KL",
+    "name": "CRESNDO"
+  },
+  {
+    "code": "6742.KL",
+    "name": "YTLPOWR"
+  },
+  {
+    "code": "6769.KL",
+    "name": "JKGLAND"
+  },
+  {
+    "code": "6807.KL",
+    "name": "PUNCAK"
+  },
+  {
+    "code": "6815.KL",
+    "name": "EUPE"
+  },
+  {
+    "code": "6874.KL",
+    "name": "JAGCPTL"
+  },
+  {
+    "code": "6888.KL",
+    "name": "AXIATA"
+  },
+  {
+    "code": "6904.KL",
+    "name": "SUBUR"
+  },
+  {
+    "code": "6912.KL",
+    "name": "PASDEC"
+  },
+  {
+    "code": "6939.KL",
+    "name": "FIAMMA"
+  },
+  {
+    "code": "6947.KL",
+    "name": "CDB"
+  },
+  {
+    "code": "6963.KL",
+    "name": "VS"
+  },
+  {
+    "code": "6971.KL",
+    "name": "KOBAY"
+  },
+  {
+    "code": "6998.KL",
+    "name": "BINTAI"
+  },
+  {
+    "code": "7003.KL",
+    "name": "Y&G"
+  },
+  {
+    "code": "7004.KL",
+    "name": "MCEHLDG"
+  },
+  {
+    "code": "7005.KL",
+    "name": "BIG"
+  },
+  {
+    "code": "7006.KL",
+    "name": "RKI"
+  },
+  {
+    "code": "7007.KL",
+    "name": "ARK"
+  },
+  {
+    "code": "7010.KL",
+    "name": "PTT"
+  },
+  {
+    "code": "7013.KL",
+    "name": "HUBLINE"
+  },
+  {
+    "code": "7014.KL",
+    "name": "YLI"
+  },
+  {
+    "code": "7016.KL",
+    "name": "CHUAN"
+  },
+  {
+    "code": "7017.KL",
+    "name": "KOMARK"
+  },
+  {
+    "code": "7018.KL",
+    "name": "CME"
+  },
+  {
+    "code": "7020.KL",
+    "name": "ASTEEL"
+  },
+  {
+    "code": "7022.KL",
+    "name": "GTRONIC"
+  },
+  {
+    "code": "7025.KL",
+    "name": "WOODLAN"
+  },
+  {
+    "code": "7028.KL",
+    "name": "ZECON"
+  },
+  {
+    "code": "7029.KL",
+    "name": "MASTER"
+  },
+  {
+    "code": "7031.KL",
+    "name": "AMTEL"
+  },
+  {
+    "code": "7033.KL",
+    "name": "HIGHTEC"
+  },
+  {
+    "code": "7034.KL",
+    "name": "TGUAN"
+  },
+  {
+    "code": "7035.KL",
+    "name": "CCK"
+  },
+  {
+    "code": "7036.KL",
+    "name": "BORNOIL"
+  },
+  {
+    "code": "7043.KL",
+    "name": "XIN"
+  },
+  {
+    "code": "7047.KL",
+    "name": "FBG"
+  },
+  {
+    "code": "7048.KL",
+    "name": "ATLAN"
+  },
+  {
+    "code": "7050.KL",
+    "name": "WONG"
+  },
+  {
+    "code": "7052.KL",
+    "name": "PADINI"
+  },
+  {
+    "code": "7053.KL",
+    "name": "SEEHUP"
+  },
+  {
+    "code": "7054.KL",
+    "name": "AASIA"
+  },
+  {
+    "code": "7055.KL",
+    "name": "PLB"
+  },
+  {
+    "code": "7060.KL",
+    "name": "NHFATT"
+  },
+  {
+    "code": "7062.KL",
+    "name": "KHIND"
+  },
+  {
+    "code": "7066.KL",
+    "name": "YONGTAI"
+  },
+  {
+    "code": "7070.KL",
+    "name": "VIZIONE"
+  },
+  {
+    "code": "7071.KL",
+    "name": "OCR"
+  },
+  {
+    "code": "7073.KL",
+    "name": "SEACERA"
+  },
+  {
+    "code": "7076.KL",
+    "name": "CBIP"
+  },
+  {
+    "code": "7077.KL",
+    "name": "KPPROP"
+  },
+  {
+    "code": "7078.KL",
+    "name": "AZRB"
+  },
+  {
+    "code": "7079.KL",
+    "name": "TWL"
+  },
+  {
+    "code": "7080.KL",
+    "name": "PERMAJU"
+  },
+  {
+    "code": "7081.KL",
+    "name": "PHARMA"
+  },
+  {
+    "code": "7082.KL",
+    "name": "M&A"
+  },
+  {
+    "code": "7083.KL",
+    "name": "ANALABS"
+  },
+  {
+    "code": "7084.KL",
+    "name": "QL"
+  },
+  {
+    "code": "7085.KL",
+    "name": "LTKM"
+  },
+  {
+    "code": "7086.KL",
+    "name": "ABLEGRP"
+  },
+  {
+    "code": "7087.KL",
+    "name": "MAGNI"
+  },
+  {
+    "code": "7088.KL",
+    "name": "POHUAT"
+  },
+  {
+    "code": "7089.KL",
+    "name": "LIIHEN"
+  },
+  {
+    "code": "7091.KL",
+    "name": "UNIMECH"
+  },
+  {
+    "code": "7094.KL",
+    "name": "EUROSP"
+  },
+  {
+    "code": "7095.KL",
+    "name": "PIE"
+  },
+  {
+    "code": "7096.KL",
+    "name": "JOE"
+  },
+  {
+    "code": "7097.KL",
+    "name": "TAWIN"
+  },
+  {
+    "code": "7099.KL",
+    "name": "MAYU"
+  },
+  {
+    "code": "7100.KL",
+    "name": "UCHITEC"
+  },
+  {
+    "code": "7103.KL",
+    "name": "SPRITZER"
+  },
+  {
+    "code": "7105.KL",
+    "name": "HCK"
+  },
+  {
+    "code": "7106.KL",
+    "name": "SUPERMX"
+  },
+  {
+    "code": "7107.KL",
+    "name": "OFI"
+  },
+  {
+    "code": "7108.KL",
+    "name": "PERDANA"
+  },
+  {
+    "code": "7113.KL",
     "name": "TOPGLOV"
   },
   {
-    "code": "0188.KL",
-    "name": "AUTOCAL"
+    "code": "7114.KL",
+    "name": "DNONCE"
   },
   {
-    "code": "0196.KL",
-    "name": "ATTA"
+    "code": "7115.KL",
+    "name": "SKBSHUT"
   },
   {
-    "code": "0227.KL",
-    "name": "AIRPAK"
+    "code": "7117.KL",
+    "name": "CJCEN"
+  },
+  {
+    "code": "7120.KL",
+    "name": "AXTERIA"
+  },
+  {
+    "code": "7121.KL",
+    "name": "XL"
+  },
+  {
+    "code": "7123.KL",
+    "name": "MAXLAND"
+  },
+  {
+    "code": "7128.KL",
+    "name": "CAMRES"
+  },
+  {
+    "code": "7129.KL",
+    "name": "ASIAFLE"
+  },
+  {
+    "code": "7131.KL",
+    "name": "ACME"
+  },
+  {
+    "code": "7132.KL",
+    "name": "SMISCOR"
+  },
+  {
+    "code": "7133.KL",
+    "name": "ULICORP"
+  },
+  {
+    "code": "7134.KL",
+    "name": "PWF"
+  },
+  {
+    "code": "7137.KL",
+    "name": "UMS"
+  },
+  {
+    "code": "7139.KL",
+    "name": "NICE"
+  },
+  {
+    "code": "7140.KL",
+    "name": "OKA"
+  },
+  {
+    "code": "7145.KL",
+    "name": "TXCD"
+  },
+  {
+    "code": "7146.KL",
+    "name": "AEM"
+  },
+  {
+    "code": "7148.KL",
+    "name": "DPHARMA"
+  },
+  {
+    "code": "7149.KL",
+    "name": "ENGKAH"
+  },
+  {
+    "code": "7152.KL",
+    "name": "JAYCORP"
+  },
+  {
+    "code": "7153.KL",
+    "name": "KOSSAN"
+  },
+  {
+    "code": "7154.KL",
+    "name": "NEXGBINA"
+  },
+  {
+    "code": "7155.KL",
+    "name": "SKPRES"
+  },
+  {
+    "code": "7157.KL",
+    "name": "CYL"
+  },
+  {
+    "code": "7160.KL",
+    "name": "PENTA"
+  },
+  {
+    "code": "7161.KL",
+    "name": "KERJAYA"
+  },
+  {
+    "code": "7162.KL",
+    "name": "ASTINO"
+  },
+  {
+    "code": "7163.KL",
+    "name": "PJBUMI"
+  },
+  {
+    "code": "7165.KL",
+    "name": "VELOCITY"
+  },
+  {
+    "code": "7167.KL",
+    "name": "ABLEGLOB"
+  },
+  {
+    "code": "7168.KL",
+    "name": "PRG"
+  },
+  {
+    "code": "7169.KL",
+    "name": "DOMINAN"
+  },
+  {
+    "code": "7170.KL",
+    "name": "LFECORP"
+  },
+  {
+    "code": "7172.KL",
+    "name": "PMBTECH"
+  },
+  {
+    "code": "7173.KL",
+    "name": "TOYOVEN"
+  },
+  {
+    "code": "7174.KL",
+    "name": "CAB"
+  },
+  {
+    "code": "7176.KL",
+    "name": "TPC"
+  },
+  {
+    "code": "7178.KL",
+    "name": "YSPSAH"
+  },
+  {
+    "code": "7179.KL",
+    "name": "LAGENDA"
+  },
+  {
+    "code": "7180.KL",
+    "name": "SERNKOU"
+  },
+  {
+    "code": "7181.KL",
+    "name": "ARBB"
+  },
+  {
+    "code": "7184.KL",
+    "name": "G3"
+  },
+  {
+    "code": "7186.KL",
+    "name": "SWSCAP"
+  },
+  {
+    "code": "7187.KL",
+    "name": "CHGP"
+  },
+  {
+    "code": "7188.KL",
+    "name": "BTM"
+  },
+  {
+    "code": "7191.KL",
+    "name": "ADVENTA"
+  },
+  {
+    "code": "7192.KL",
+    "name": "GIIB"
+  },
+  {
+    "code": "7195.KL",
+    "name": "BNASTRA"
+  },
+  {
+    "code": "7197.KL",
+    "name": "GESHEN"
+  },
+  {
+    "code": "7198.KL",
+    "name": "DPS"
+  },
+  {
+    "code": "7199.KL",
+    "name": "KEINHIN"
+  },
+  {
+    "code": "7200.KL",
+    "name": "TEKSENG"
+  },
+  {
+    "code": "7201.KL",
+    "name": "PICORP"
+  },
+  {
+    "code": "7202.KL",
+    "name": "HEXRTL"
+  },
+  {
+    "code": "7203.KL",
+    "name": "WANGZNG"
+  },
+  {
+    "code": "7204.KL",
+    "name": "D&O"
+  },
+  {
+    "code": "7207.KL",
+    "name": "SUCCESS"
+  },
+  {
+    "code": "7208.KL",
+    "name": "EURO"
+  },
+  {
+    "code": "7209.KL",
+    "name": "CHEETAH"
+  },
+  {
+    "code": "7210.KL",
+    "name": "FM"
+  },
+  {
+    "code": "7211.KL",
+    "name": "TAFI"
+  },
+  {
+    "code": "7212.KL",
+    "name": "DESTINI"
+  },
+  {
+    "code": "7214.KL",
+    "name": "ARANK"
+  },
+  {
+    "code": "7215.KL",
+    "name": "NIHSIN"
+  },
+  {
+    "code": "7216.KL",
+    "name": "KAWAN"
+  },
+  {
+    "code": "7217.KL",
+    "name": "EMETALL"
+  },
+  {
+    "code": "7218.KL",
+    "name": "ARKA"
+  },
+  {
+    "code": "7219.KL",
+    "name": "AIZO"
+  },
+  {
+    "code": "7221.KL",
+    "name": "BSLCORP"
+  },
+  {
+    "code": "7222.KL",
+    "name": "IMASPRO"
+  },
+  {
+    "code": "7223.KL",
+    "name": "JADI"
+  },
+  {
+    "code": "7225.KL",
+    "name": "PA"
+  },
+  {
+    "code": "7226.KL",
+    "name": "WATTA"
+  },
+  {
+    "code": "7227.KL",
+    "name": "UMSNGB"
+  },
+  {
+    "code": "7228.KL",
+    "name": "T7GLOBAL"
+  },
+  {
+    "code": "7229.KL",
+    "name": "FAVCO"
+  },
+  {
+    "code": "7230.KL",
+    "name": "TOMEI"
+  },
+  {
+    "code": "7231.KL",
+    "name": "WELLCAL"
+  },
+  {
+    "code": "7232.KL",
+    "name": "RESINTC"
+  },
+  {
+    "code": "7233.KL",
+    "name": "DUFU"
+  },
+  {
+    "code": "7234.KL",
+    "name": "LOTUSCIR"
+  },
+  {
+    "code": "7235.KL",
+    "name": "SUPERLN"
+  },
+  {
+    "code": "7237.KL",
+    "name": "PWROOT"
+  },
+  {
+    "code": "7239.KL",
+    "name": "SCNWOLF"
+  },
+  {
+    "code": "7240.KL",
+    "name": "IHB"
+  },
+  {
+    "code": "7241.KL",
+    "name": "NGGB"
+  },
+  {
+    "code": "7243.KL",
+    "name": "MAGMA"
+  },
+  {
+    "code": "7245.KL",
+    "name": "CITAGLB"
+  },
+  {
+    "code": "7246.KL",
+    "name": "SIGN"
+  },
+  {
+    "code": "7247.KL",
+    "name": "SCGM"
+  },
+  {
+    "code": "7248.KL",
+    "name": "SLP"
+  },
+  {
+    "code": "7249.KL",
+    "name": "SKYGATE"
+  },
+  {
+    "code": "7250.KL",
+    "name": "UZMA"
+  },
+  {
+    "code": "7252.KL",
+    "name": "TEOSENG"
+  },
+  {
+    "code": "7253.KL",
+    "name": "HANDAL"
+  },
+  {
+    "code": "7277.KL",
+    "name": "DIALOG"
+  },
+  {
+    "code": "7285.KL",
+    "name": "TOMYPAK"
+  },
+  {
+    "code": "7293.KL",
+    "name": "YINSON"
+  },
+  {
+    "code": "7315.KL",
+    "name": "AHB"
+  },
+  {
+    "code": "7323.KL",
+    "name": "KEN"
+  },
+  {
+    "code": "7374.KL",
+    "name": "TIENWAH"
+  },
+  {
+    "code": "7382.KL",
+    "name": "GLBHD"
+  },
+  {
+    "code": "7412.KL",
+    "name": "SHH"
+  },
+  {
+    "code": "7439.KL",
+    "name": "TECGUAN"
+  },
+  {
+    "code": "7471.KL",
+    "name": "EDEN"
+  },
+  {
+    "code": "7498.KL",
+    "name": "RALCO"
+  },
+  {
+    "code": "7501.KL",
+    "name": "HARNLEN"
+  },
+  {
+    "code": "7528.KL",
+    "name": "DKLS"
+  },
+  {
+    "code": "7544.KL",
+    "name": "QUALITY"
+  },
+  {
+    "code": "7579.KL",
+    "name": "AWC"
+  },
+  {
+    "code": "7595.KL",
+    "name": "MGB"
+  },
+  {
+    "code": "7609.KL",
+    "name": "AJIYA"
+  },
+  {
+    "code": "7617.KL",
+    "name": "MAGNA"
+  },
+  {
+    "code": "7668.KL",
+    "name": "BESHOM"
+  },
+  {
+    "code": "7676.KL",
+    "name": "GCAP"
+  },
+  {
+    "code": "7692.KL",
+    "name": "MYTECH"
+  },
+  {
+    "code": "7722.KL",
+    "name": "ASIABRN"
+  },
+  {
+    "code": "7757.KL",
+    "name": "UPA"
+  },
+  {
+    "code": "7765.KL",
+    "name": "RAPID"
+  },
+  {
+    "code": "7773.KL",
+    "name": "EPMB"
+  },
+  {
+    "code": "7803.KL",
+    "name": "HEXCARE"
+  },
+  {
+    "code": "7811.KL",
+    "name": "SAPIND"
+  },
+  {
+    "code": "7854.KL",
+    "name": "TIMWELL"
+  },
+  {
+    "code": "7889.KL",
+    "name": "THRIVEN"
+  },
+  {
+    "code": "7935.KL",
+    "name": "MILUX"
+  },
+  {
+    "code": "7943.KL",
+    "name": "GREENTEC"
+  },
+  {
+    "code": "7986.KL",
+    "name": "CNASIA"
+  },
+  {
+    "code": "8044.KL",
+    "name": "CFM"
+  },
+  {
+    "code": "8052.KL",
+    "name": "CGB"
+  },
+  {
+    "code": "8079.KL",
+    "name": "LEESK"
+  },
+  {
+    "code": "8117.KL",
+    "name": "PGF"
+  },
+  {
+    "code": "8133.KL",
+    "name": "BHIC"
+  },
+  {
+    "code": "8141.KL",
+    "name": "MJPERAK"
+  },
+  {
+    "code": "8176.KL",
+    "name": "WAVEFRNT"
+  },
+  {
+    "code": "8192.KL",
+    "name": "MERCURY"
+  },
+  {
+    "code": "8206.KL",
+    "name": "ECOWLD"
+  },
+  {
+    "code": "8273.KL",
+    "name": "PPHB"
+  },
+  {
+    "code": "8303.KL",
+    "name": "LOTUS"
+  },
+  {
+    "code": "8311.KL",
+    "name": "PESONA"
+  },
+  {
+    "code": "8338.KL",
+    "name": "DATAPRP"
+  },
+  {
+    "code": "8346.KL",
+    "name": "PRKCORP"
+  },
+  {
+    "code": "8362.KL",
+    "name": "KYM"
+  },
+  {
+    "code": "8397.KL",
+    "name": "TNLOGIS"
+  },
+  {
+    "code": "8419.KL",
+    "name": "PANSAR"
+  },
+  {
+    "code": "8435.KL",
+    "name": "CEPCO"
+  },
+  {
+    "code": "8443.KL",
+    "name": "HIL"
+  },
+  {
+    "code": "8478.KL",
+    "name": "HWATAI"
+  },
+  {
+    "code": "8486.KL",
+    "name": "LIONPSIM"
+  },
+  {
+    "code": "8494.KL",
+    "name": "LBICAP"
+  },
+  {
+    "code": "8524.KL",
+    "name": "TALIWRK"
+  },
+  {
+    "code": "8532.KL",
+    "name": "PERTAMA"
+  },
+  {
+    "code": "8567.KL",
+    "name": "SALCON"
+  },
+  {
+    "code": "8583.KL",
+    "name": "MAHSING"
+  },
+  {
+    "code": "8591.KL",
+    "name": "CRESBLD"
+  },
+  {
+    "code": "8605.KL",
+    "name": "FIHB"
+  },
+  {
+    "code": "8613.KL",
+    "name": "ENRA"
+  },
+  {
+    "code": "8621.KL",
+    "name": "LPI"
+  },
+  {
+    "code": "8648.KL",
+    "name": "JASKITA"
+  },
+  {
+    "code": "8664.KL",
+    "name": "SPSETIA"
+  },
+  {
+    "code": "8672.KL",
+    "name": "KAMDAR"
+  },
+  {
+    "code": "8702.KL",
+    "name": "TEXCHEM"
+  },
+  {
+    "code": "8745.KL",
+    "name": "S&FCAP"
+  },
+  {
+    "code": "8869.KL",
+    "name": "PMETAL"
+  },
+  {
+    "code": "8877.KL",
+    "name": "EKOVEST"
+  },
+  {
+    "code": "8885.KL",
+    "name": "AVI"
+  },
+  {
+    "code": "8893.KL",
+    "name": "MKLAND"
+  },
+  {
+    "code": "8907.KL",
+    "name": "EG"
+  },
+  {
+    "code": "8923.KL",
+    "name": "JIANKUN"
+  },
+  {
+    "code": "8966.KL",
+    "name": "TECHBASE"
+  },
+  {
+    "code": "8982.KL",
+    "name": "CEPAT"
+  },
+  {
+    "code": "9008.KL",
+    "name": "OMESTI"
+  },
+  {
+    "code": "9016.KL",
+    "name": "EKSONS"
+  },
+  {
+    "code": "9059.KL",
+    "name": "TSH"
+  },
+  {
+    "code": "9075.KL",
+    "name": "THETA"
+  },
+  {
+    "code": "9083.KL",
+    "name": "JETSON"
+  },
+  {
+    "code": "9091.KL",
+    "name": "EMICO"
+  },
+  {
+    "code": "9113.KL",
+    "name": "ICONIC"
+  },
+  {
+    "code": "9121.KL",
+    "name": "KPSCB"
+  },
+  {
+    "code": "9148.KL",
+    "name": "GBAY"
+  },
+  {
+    "code": "9172.KL",
+    "name": "FPI"
+  },
+  {
+    "code": "9199.KL",
+    "name": "LYSAGHT"
+  },
+  {
+    "code": "9237.KL",
+    "name": "SCIB"
+  },
+  {
+    "code": "9261.KL",
+    "name": "GADANG"
+  },
+  {
+    "code": "9288.KL",
+    "name": "BONIA"
+  },
+  {
+    "code": "9296.KL",
+    "name": "RCECAP"
+  },
+  {
+    "code": "9318.KL",
+    "name": "FITTERS"
+  },
+  {
+    "code": "9326.KL",
+    "name": "LBALUM"
+  },
+  {
+    "code": "9334.KL",
+    "name": "KESM"
+  },
+  {
+    "code": "9369.KL",
+    "name": "TGL"
+  },
+  {
+    "code": "9377.KL",
+    "name": "FSBM"
+  },
+  {
+    "code": "9385.KL",
+    "name": "LAYHONG"
+  },
+  {
+    "code": "9393.KL",
+    "name": "ITRONIC"
+  },
+  {
+    "code": "9407.KL",
+    "name": "PARAGON"
+  },
+  {
+    "code": "9423.KL",
+    "name": "CWG"
+  },
+  {
+    "code": "9431.KL",
+    "name": "SJC"
+  },
+  {
+    "code": "9466.KL",
+    "name": "KKB"
+  },
+  {
+    "code": "9539.KL",
+    "name": "MUH"
+  },
+  {
+    "code": "9571.KL",
+    "name": "MITRA"
+  },
+  {
+    "code": "9598.KL",
+    "name": "PTARAS"
+  },
+  {
+    "code": "9601.KL",
+    "name": "HWGB"
+  },
+  {
+    "code": "9628.KL",
+    "name": "LEBTECH"
+  },
+  {
+    "code": "9679.KL",
+    "name": "WCT"
+  },
+  {
+    "code": "9687.KL",
+    "name": "IDEAL"
+  },
+  {
+    "code": "9695.KL",
+    "name": "PLS"
+  },
+  {
+    "code": "9717.KL",
+    "name": "SYCAL"
+  },
+  {
+    "code": "9741.KL",
+    "name": "ROHAS"
+  },
+  {
+    "code": "9776.KL",
+    "name": "RSSB"
+  },
+  {
+    "code": "9792.KL",
+    "name": "SEG"
+  },
+  {
+    "code": "9814.KL",
+    "name": "BERTAM"
+  },
+  {
+    "code": "9822.KL",
+    "name": "SAM"
+  },
+  {
+    "code": "9873.KL",
+    "name": "PRESTAR"
+  },
+  {
+    "code": "9881.KL",
+    "name": "LSTEEL"
+  },
+  {
+    "code": "9938.KL",
+    "name": "BRIGHT"
+  },
+  {
+    "code": "9946.KL",
+    "name": "ETA"
+  },
+  {
+    "code": "9954.KL",
+    "name": "RGTBHD"
+  },
+  {
+    "code": "9962.KL",
+    "name": "GMUTUAL"
+  },
+  {
+    "code": "9997.KL",
+    "name": "PENSONI"
   }
 ]
