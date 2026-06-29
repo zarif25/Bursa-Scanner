@@ -351,15 +351,35 @@ def get_bursa_tickers() -> list[tuple[str, str]]:
         import json, pathlib
         json_path = pathlib.Path(__file__).parent / "stocks.json"
         data   = json.loads(json_path.read_text())
-        stocks = [(item["code"], item["name"]) for item in data]
+        stocks = [(item["code"], item["name"].replace(".KL","")) for item in data if item.get("code") and item.get("name")]
         if len(stocks) > 50:
             log.info(f"✅ Layer 2 (stocks.json): {len(stocks)} stocks")
             return stocks
     except Exception as e:
         log.warning(f"Layer 2 failed: {e}")
 
-    # Layer 3: Hardcoded fallback
-    log.info(f"✅ Layer 3 (hardcoded): {len(BURSA_HARDCODED)} stocks")
+    # Layer 3: CSV file (Bursa_Malaysia.csv)
+    try:
+        import csv, pathlib
+        csv_path = pathlib.Path(__file__).parent / "Bursa_Malaysia.csv"
+        stocks = []
+        with open(csv_path, 'r') as f:
+            reader = csv.reader(f)
+            next(reader)
+            for row in reader:
+                if len(row) >= 2 and row[0].strip() and row[1].strip():
+                    code   = row[0].strip()
+                    symbol = row[1].strip().replace('.KL', '')
+                    if code and symbol:
+                        stocks.append((code, symbol))
+        if len(stocks) > 50:
+            log.info(f"✅ Layer 3 (CSV): {len(stocks)} stocks")
+            return stocks
+    except Exception as e:
+        log.warning(f"Layer 3 CSV failed: {e}")
+
+    # Layer 4: Hardcoded fallback
+    log.info(f"✅ Layer 4 (hardcoded): {len(BURSA_HARDCODED)} stocks")
     return BURSA_HARDCODED
 
 
