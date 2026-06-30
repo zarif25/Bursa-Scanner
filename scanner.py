@@ -538,6 +538,50 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
 
 
 # ── Main scan ──────────────────────────────────────────────────────────────────
+# ── Daily dedup tracking ─────────────────────────────────────────────────────
+ALERTED_FILE = "alerted_today.json"
+
+
+def load_alerted_today() -> set:
+    """
+    Load the set of tickers already alerted today.
+    Resets automatically if the stored date is not today (MYT).
+    """
+    import json
+    import pathlib
+
+    myt   = timezone(timedelta(hours=8))
+    today = datetime.now(myt).date().isoformat()
+
+    path = pathlib.Path(__file__).parent / ALERTED_FILE
+    if not path.exists():
+        return set()
+
+    try:
+        data = json.loads(path.read_text())
+        if data.get("date") != today:
+            # New day — reset
+            return set()
+        return set(data.get("tickers", []))
+    except Exception:
+        return set()
+
+
+def save_alerted_today(alerted: set) -> None:
+    """Persist the set of tickers alerted today, tagged with today's date."""
+    import json
+    import pathlib
+
+    myt   = timezone(timedelta(hours=8))
+    today = datetime.now(myt).date().isoformat()
+
+    path = pathlib.Path(__file__).parent / ALERTED_FILE
+    path.write_text(json.dumps({
+        "date":    today,
+        "tickers": sorted(alerted),
+    }, indent=2))
+
+
 def run_scan():
     start = datetime.now()
     log.info("=" * 60)
@@ -572,25 +616,40 @@ def run_scan():
         log.info("No signals this run.")
         return
 
+    # ── Dedup: skip stocks already alerted today ───────────────────────────
+    alerted_today = load_alerted_today()
+    new_results   = [r for r in results if r["ticker"] not in alerted_today]
+    skipped       = len(results) - len(new_results)
+
+    if skipped:
+        log.info(f"Skipped {skipped} already-alerted stock(s) today")
+
+    if not new_results:
+        log.info("All signals already alerted today — nothing new to send.")
+        return
+
     myt     = timezone(timedelta(hours=8))
     now_myt = datetime.now(myt)
     summary = (
         f"<b>🔍 Saham Alert — Market Scan</b>\n"
         f"{now_myt.strftime('%d %b %Y  %H:%M MYT')}\n"
         f"Scanned: {len(stocks)} stocks\n"
-        f"Signals found: {len(results)}\n"
-        f"{'─' * 36}"
+        f"New signals: {len(new_results)}"
+        + (f"  (skipped {skipped} repeat)" if skipped else "")
+        + f"\n{'─' * 36}"
     )
     send_telegram(summary)
     time.sleep(DELAY_BETWEEN_MSGS)
 
-    for r in results:
+    for r in new_results:
         msg = format_alert(r["ticker"], r["price"], r["signals"], r.get("name", ""))
         log.info(f"  → {r['ticker']} ({r.get('name','')}) {r['signals']}")
         send_telegram(msg)
         time.sleep(DELAY_BETWEEN_MSGS)
+        alerted_today.add(r["ticker"])
 
-    log.info("All alerts sent.")
+    save_alerted_today(alerted_today)
+    log.info(f"All alerts sent. {len(alerted_today)} unique stocks alerted today.")
 
 
 if __name__ == "__main__":

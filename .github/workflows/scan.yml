@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '0,30 1-8 * * 1-5'
     - cron: '0 9 * * 1-5'
+  repository_dispatch:
+    types: [run-scan]          # triggered externally by cron-job.org
   workflow_dispatch:
     inputs:
       reason:
@@ -16,19 +18,14 @@ jobs:
     name: Scan Bursa Malaysia
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write       # needed to commit alerted_today.json back
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.2.2
         with:
           clean: true        # always fresh checkout
-
-      - name: Verify files
-        run: |
-          echo "=== stocks.json count ==="
-          python3 -c "import json; d=json.load(open('stocks.json')); print(f'stocks.json has {len(d)} entries')"
-          echo "=== scanner.py Layer 2 ==="
-          grep -n "json_path\|Layer 2\|> 500" scanner.py
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5.3.0
@@ -44,6 +41,19 @@ jobs:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID:   ${{ secrets.CHAT_ID }}
         run: python scanner.py
+
+      - name: Commit dedup tracking file
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain alerted_today.json)" ]; then
+            git add alerted_today.json
+            git commit -m "Update alerted_today.json [skip ci]"
+            git push
+          else
+            echo "No changes to alerted_today.json"
+          fi
 
       - name: Upload scan log (on failure)
         if: failure()
