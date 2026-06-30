@@ -1,9 +1,9 @@
 """
 Bursa Malaysia Market Scanner — Saham Alert
 
-Signals detected (only fires when price is UP vs yesterday's close):
-  - Price Up                 : Current price higher than yesterday's close
-  - Golden Cross (GC)        : MA50 crosses above MA200
+Signals detected (only fires when current price is HIGHER vs yesterday's open):
+  - Price Up                 : Current price 7% higher compared to previous 2 days' close
+  - Golden Cross (GC)        : MA5 crosses above MA20
   - Bullish Zone             : Price above MA200
   - 52-Week High (52WH)      : Price within 0.5% of 52-week high
   - All-Time High (ATH)      : Price within 0.5% of all-time high
@@ -18,8 +18,8 @@ Filters:
 
 Stock list strategy (3 layers, first success wins):
   1. KLSEScreener API  — live full market list
-  2. Bursa systematic  — auto-generate codes 0001–9999 in known ranges
-  3. Hardcoded list    — 400+ known active counters as final fallback
+  2. stocks.json       — bundled verified list (1000+ stocks)
+  3. Hardcoded list    — minimal fallback as last resort
 """
 
 import os
@@ -444,25 +444,17 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
         try:
             fi = tk.fast_info
             current_price = float(fi.last_price)
-            prev_close    = float(fi.previous_close)
         except Exception:
             return None
 
-        # Sanity check: prices must be positive and reasonable
-        if not current_price or not prev_close:
-            return None
-        if current_price <= 0 or prev_close <= 0:
+        if not current_price or current_price <= 0:
             return None
 
         # Price range filter: RM0.205 – RM6.90
         if not (MIN_PRICE <= current_price <= MAX_PRICE):
             return None
 
-        # Gate: price must be UP vs yesterday's actual close
-        if current_price <= prev_close:
-            return None
-
-        # ── Step 2: download history for signal calculations ──────────────────
+        # ── Step 2: download history for open/close/MA/52WH calculations ─────
         df = tk.history(period="2y", interval="1d", auto_adjust=True)
 
         if df is None or df.empty or len(df) < 210:
@@ -471,11 +463,12 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
 
+        open_  = df["Open"].dropna()
         close  = df["Close"].dropna()
         high   = df["High"].dropna()
         volume = df["Volume"].dropna()
 
-        if len(close) < 60:
+        if len(close) < 60 or len(open_) < 3:
             return None
 
         current_volume = float(volume.iloc[-1])
@@ -485,8 +478,15 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
         if avg_vol < MIN_VOLUME:
             return None
 
-        # Use fast_info prices (already validated above)
-        # adj_close = close for signal MA calculations
+        # ── Gate: current price must be HIGHER than yesterday's OPEN ──────────
+        yesterday_open = float(open_.iloc[-2])
+        if yesterday_open <= 0 or current_price <= yesterday_open:
+            return None
+
+        # ── Price Up signal: current price ≥7% above close from 2 days ago ───
+        close_2d_ago = float(close.iloc[-3])
+        pct_vs_2d    = (current_price - close_2d_ago) / close_2d_ago * 100 if close_2d_ago > 0 else 0
+
         adj_close = close
 
         # 52WH: rolling 252 days on High prices
@@ -496,21 +496,25 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
         # ATH from full history highs
         ath = float(high.max())
 
-        # MA calculations on close
-        ma50  = close.rolling(50).mean()
-        ma200 = close.rolling(200).mean()
-        ma50_now   = float(ma50.iloc[-1])
-        ma50_prev  = float(ma50.iloc[-2])
-        ma200_now  = float(ma200.iloc[-1])
-        ma200_prev = float(ma200.iloc[-2])
+        # ── Golden Cross: MA5 crosses above MA20 ──────────────────────────────
+        ma5   = close.rolling(5).mean()
+        ma20  = close.rolling(20).mean()
+        ma5_now   = float(ma5.iloc[-1])
+        ma5_prev  = float(ma5.iloc[-2])
+        ma20_now  = float(ma20.iloc[-1])
+        ma20_prev = float(ma20.iloc[-2])
+
+        # ── Bullish Zone: price above MA200 ────────────────────────────────────
+        ma200_now = float(close.rolling(200).mean().iloc[-1])
 
         # Build signals
-        pct_chg = (current_price - prev_close) / prev_close * 100
-        signals = [f"📈 Price Up (+{pct_chg:.2f}% vs yesterday)"]
+        signals = []
 
-        if ma50_now > ma200_now and ma50_prev <= ma200_prev:
+        if pct_vs_2d >= 7.0:
+            signals.append(f"📈 Price Up (+{pct_vs_2d:.2f}% vs 2-day-ago close)")
+        if ma5_now > ma20_now and ma5_prev <= ma20_prev:
             signals.append("📗 GC Alert")
-        if ma50_now > ma200_now:
+        if current_price > ma200_now:
             signals.append("📗 Bullish Zone Alert")
         if current_price >= ath * (1 - ATH_TOLERANCE / 100):
             signals.append("📗 ATH Alert")
@@ -521,8 +525,7 @@ def analyze(ticker: str, name: str = "") -> Optional[dict]:
         if avg_vol > 0 and current_volume >= avg_vol * VOLUME_SURGE_MULT:
             signals.append("📈 Volume Surge")
 
-        # Must have at least one signal beyond "Price Up"
-        if len(signals) < 2:
+        if not signals:
             return None
 
         return {
