@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+scanner.db
+alerted_today.json
+*.log
+output/
