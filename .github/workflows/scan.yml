@@ -12,6 +12,7 @@ jobs:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: |
-          curl -sS -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+          RESPONSE=$(curl -sS -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -H "Content-Type: application/json" \
-            -d "{\"chat_id\":\"${CHAT_ID}\",\"text\":\"workflow test\"}"
+            -d "{\"chat_id\":\"${CHAT_ID}\",\"text\":\"workflow test\"}")
+          echo "$RESPONSE"
