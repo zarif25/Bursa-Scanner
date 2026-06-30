@@ -1,52 +1,16 @@
-name: Bursa Scanner Test
+name: Bursa Market Scanner — Saham Alert
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 1 * * 1-5'
 
 jobs:
-  test:
+  test-telegram:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pandas requests yfinance
-
-          steps:
-  - name: Checkout
-    uses: actions/checkout@v4
-
-  - name: Set up Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: "3.11"
-
-  - name: Install dependencies
-    run: |
-      python -m pip install --upgrade pip
-      pip install pandas requests yfinance
-
-  - name: Test Telegram
-    env:
-      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-      CHAT_ID: ${{ secrets.CHAT_ID }}
-    run: |
-      curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-        -d "chat_id=${CHAT_ID}&text=workflow test"
-
-      - name: Run scanner
+      - name: Test Telegram
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: python scanner.py
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${CHAT_ID}&text=workflow test"
