@@ -1,7 +1,7 @@
 name: Bursa Market Scanner — Saham Alert
 
 on:
-   repository_dispatch:
+  repository_dispatch:
     types: [run-scan]
   workflow_dispatch:
     inputs:
