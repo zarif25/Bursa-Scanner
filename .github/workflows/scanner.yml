@@ -1,10 +1,7 @@
 name: Bursa Market Scanner — Saham Alert
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'
-    - cron: '0 9 * * 1-5'
-  repository_dispatch:
+   repository_dispatch:
     types: [run-scan]
   workflow_dispatch:
     inputs:
