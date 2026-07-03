@@ -10,13 +10,12 @@ import requests
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(message)s")
 
 def load_tickers():
-    """Reads stocks.json and extracts the ticker codes."""
+    """Reads stocks.json and extracts the ticker codes and names."""
     try:
         with open("stocks.json", "r") as f:
             data = json.load(f)
-            tickers = [item["code"] for item in data]
-            logging.info(f"✅ Successfully loaded {len(tickers)} tickers from stocks.json")
-            return tickers
+            logging.info(f"✅ Successfully loaded {len(data)} tickers from stocks.json")
+            return data
     except FileNotFoundError:
         logging.error("❌ stocks.json file not found! Make sure it is in the same directory.")
         return []
@@ -24,8 +23,9 @@ def load_tickers():
         logging.error(f"❌ Error reading stocks.json: {e}")
         return []
 
-TICKERS = load_tickers()
+STOCKS = load_tickers()
 
+# Updated to match your scanner.yml file exactly
 TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("CHAT_ID")
 
@@ -47,8 +47,7 @@ def get_history(ticker):
     if df is None or df.empty:
         return pd.DataFrame()
     
-    # FIX: yfinance updated to return MultiIndex columns (tuples). 
-    # We flatten them to just the standard names (e.g., 'Open', 'Close').
+    # Fix for newer yfinance versions returning MultiIndex columns
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
         
@@ -130,9 +129,10 @@ def send_telegram(message):
     r.raise_for_status()
     return True
 
-def format_message(ticker, signals, price, open_price):
+# Updated to accept 'name' and format it as "NAME (CODE)"
+def format_message(ticker, name, signals, price, open_price):
     lines = [
-        f"*{ticker}*",
+        f"*{name} ({ticker})*",
         f"Current: {price:.2f}",
         f"Yesterday Open: {open_price:.2f}",
         "",
@@ -142,46 +142,51 @@ def format_message(ticker, signals, price, open_price):
         lines.append(f" - {s}")
     return "\n".join(lines)
 
-def scan_ticker(ticker):
+def scan_ticker(ticker, name):
     if not in_trading_hours():
-        logging.info(f"⏰ {ticker}: Outside trading hours, skip.")
+        logging.info(f"⏰ {name} ({ticker}): Outside trading hours, skip.")
         return
 
     try:
         df = get_history(ticker)
         if df.empty:
-            logging.info(f"📊 {ticker}: No data found, skip.")
+            logging.info(f"📊 {name} ({ticker}): No data found, skip.")
             return
 
         signals = compute_signals(df)
         if not signals:
-            logging.info(f"🚫 {ticker}: No signal triggered.")
+            logging.info(f"🚫 {name} ({ticker}): No signal triggered.")
             return
 
         latest = df.iloc[-1]
         yesterday = df.iloc[-2]
         msg = format_message(
             ticker,
+            name,
             signals,
             float(latest["Close"]),
             float(yesterday["Open"])
         )
         
         send_telegram(msg)
-        logging.info(f"🚀 {ticker}: Sent to Telegram! Signals: {signals}")
+        logging.info(f"🚀 {name} ({ticker}): Sent to Telegram! Signals: {signals}")
         
     except Exception as e:
-        logging.error(f"❌ {ticker}: Error occurred - {e}")
+        logging.error(f"❌ {name} ({ticker}): Error occurred - {e}")
 
 def main():
     logging.info("🤖 Starting Bursa Malaysia Scanner...")
     
-    if not TICKERS:
-        logging.error("❌ No tickers loaded. Exiting.")
+    if not STOCKS:
+        logging.error("❌ No stocks loaded. Exiting.")
         return
 
-    for ticker in TICKERS:
-        scan_ticker(ticker)
+    # Loop through the list of dictionaries
+    for stock in STOCKS:
+        ticker = stock.get("code")
+        name = stock.get("name", ticker) # Fallback to ticker if name is missing
+        if ticker:
+            scan_ticker(ticker, name)
         
     logging.info("✅ Scan finished.")
 
