@@ -26,8 +26,8 @@ def load_tickers():
 
 TICKERS = load_tickers()
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("CHAT_ID")
 
 MARKET_OPEN = time(9, 0)
 MARKET_CLOSE = time(17, 0)
