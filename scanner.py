@@ -6,6 +6,7 @@ from datetime import datetime, time, timedelta
 import pandas as pd
 import yfinance as yf
 import requests
+import holidays
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(message)s")
 
@@ -34,12 +35,25 @@ STOCKS = load_tickers()
 TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("CHAT_ID")
 
-MARKET_OPEN = time(9, 0)
-MARKET_CLOSE = time(17, 0)
+# Instantiate Malaysian holidays
+MY_HOLIDAYS = holidays.MY()
 
-def in_trading_hours(now=None):
-    now = now or datetime.utcnow() + timedelta(hours=8)
-    return MARKET_OPEN <= now.time() <= MARKET_CLOSE
+def should_run():
+    """Check if it's a weekday, not a holiday, and within trading hours."""
+    now = datetime.utcnow() + timedelta(hours=8)
+    
+    # Check if weekend (Saturday=5, Sunday=6)
+    if now.weekday() >= 5:
+        logging.info("📆 Today is a weekend. Skipping scan.")
+        return False
+        
+    # Check if public holiday in Malaysia
+    if now.date() in MY_HOLIDAYS:
+        logging.info("🎉 Today is a Malaysian Public Holiday. Skipping scan.")
+        return False
+
+    # Check if within market hours (9:00 AM to 5:30 PM to allow the 5:15 PM scan)
+    return time(9, 0) <= now.time() <= time(17, 30)
 
 # --- DEDUP LOGIC ---
 def get_today_str():
@@ -174,10 +188,6 @@ def format_message(ticker, name, signals, price):
     return "\n".join(lines)
 
 def scan_ticker(ticker, name, alerted_set):
-    if not in_trading_hours():
-        logging.info(f"⏰ {name} ({ticker}): Outside trading hours, skip.")
-        return
-
     # Check if already alerted today
     if ticker in alerted_set:
         logging.info(f"⏳ {name} ({ticker}): Already alerted today, skip.")
@@ -223,6 +233,11 @@ def scan_ticker(ticker, name, alerted_set):
 def main():
     logging.info("🤖 Starting Bursa Malaysia Scanner...")
     
+    # Check if we should run today
+    if not should_run():
+        logging.info("⏹️ Script finished early due to weekend, holiday, or outside trading hours.")
+        return
+
     if not STOCKS:
         logging.error("❌ No stocks loaded. Exiting.")
         return
