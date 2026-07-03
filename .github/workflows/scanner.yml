@@ -9,6 +9,38 @@ on:
         description: 'Reason for manual run (optional)'
         required: false
         default: 'Manual test'
+  schedule:
+    # Scheduled times in UTC (Malaysia Time is UTC+8)
+    # 9:15 AM MYT -> 1:15 AM UTC
+    - cron: '15 1 * * 1-5'
+    # 9:45 AM MYT -> 1:45 AM UTC
+    - cron: '45 1 * * 1-5'
+    # 10:15 AM MYT -> 2:15 AM UTC
+    - cron: '15 2 * * 1-5'
+    # 10:45 AM MYT -> 2:45 AM UTC
+    - cron: '45 2 * * 1-5'
+    # 11:15 AM MYT -> 3:15 AM UTC
+    - cron: '15 3 * * 1-5'
+    # 11:45 AM MYT -> 3:45 AM UTC
+    - cron: '45 3 * * 1-5'
+    # 12:15 PM MYT -> 4:15 AM UTC
+    - cron: '15 4 * * 1-5'
+    # 12:45 PM MYT -> 4:45 AM UTC
+    - cron: '45 4 * * 1-5'
+    # 2:15 PM MYT -> 6:15 AM UTC
+    - cron: '15 6 * * 1-5'
+    # 2:45 PM MYT -> 6:45 AM UTC
+    - cron: '45 6 * * 1-5'
+    # 3:15 PM MYT -> 7:15 AM UTC
+    - cron: '15 7 * * 1-5'
+    # 3:45 PM MYT -> 7:45 AM UTC
+    - cron: '45 7 * * 1-5'
+    # 4:15 PM MYT -> 8:15 AM UTC
+    - cron: '15 8 * * 1-5'
+    # 4:45 PM MYT -> 8:45 AM UTC
+    - cron: '45 8 * * 1-5'
+    # 5:15 PM MYT -> 9:15 AM UTC
+    - cron: '15 9 * * 1-5'
 
 jobs:
   scan:
