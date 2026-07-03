@@ -14,7 +14,6 @@ def load_tickers():
     try:
         with open("stocks.json", "r") as f:
             data = json.load(f)
-            # Extract the "code" from each object in the list
             tickers = [item["code"] for item in data]
             logging.info(f"✅ Successfully loaded {len(tickers)} tickers from stocks.json")
             return tickers
@@ -47,8 +46,14 @@ def get_history(ticker):
     )
     if df is None or df.empty:
         return pd.DataFrame()
+    
+    # FIX: yfinance updated to return MultiIndex columns (tuples). 
+    # We flatten them to just the standard names (e.g., 'Open', 'Close').
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+        
     df = df.dropna().copy()
-    df.columns = [c.capitalize() for c in df.columns]
+    df.columns = [str(c).capitalize() for c in df.columns]
     return df
 
 def crossed_above(prev_a, prev_b, curr_a, curr_b):
