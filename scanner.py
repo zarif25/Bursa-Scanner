@@ -1,6 +1,7 @@
 import os
+import json
 import logging
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 import pandas as pd
 import yfinance as yf
@@ -8,9 +9,23 @@ import requests
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(message)s")
 
-TICKERS = [
-    # add Bursa tickers here, e.g. "1155.KL", "5248.KL"
-]
+def load_tickers():
+    """Reads stocks.json and extracts the ticker codes."""
+    try:
+        with open("stocks.json", "r") as f:
+            data = json.load(f)
+            # Extract the "code" from each object in the list
+            tickers = [item["code"] for item in data]
+            logging.info(f"✅ Successfully loaded {len(tickers)} tickers from stocks.json")
+            return tickers
+    except FileNotFoundError:
+        logging.error("❌ stocks.json file not found! Make sure it is in the same directory.")
+        return []
+    except Exception as e:
+        logging.error(f"❌ Error reading stocks.json: {e}")
+        return []
+
+TICKERS = load_tickers()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
@@ -19,11 +34,17 @@ MARKET_OPEN = time(9, 0)
 MARKET_CLOSE = time(17, 0)
 
 def in_trading_hours(now=None):
-    now = now or datetime.now()
+    now = now or datetime.utcnow() + timedelta(hours=8)
     return MARKET_OPEN <= now.time() <= MARKET_CLOSE
 
 def get_history(ticker):
-    df = yf.download(ticker, period="max", interval="1d", progress=False, auto_adjust=False)
+    df = yf.download(
+        ticker,
+        period="max",
+        interval="1d",
+        progress=False,
+        auto_adjust=False
+    )
     if df is None or df.empty:
         return pd.DataFrame()
     df = df.dropna().copy()
@@ -91,7 +112,7 @@ def compute_signals(df):
 
 def send_telegram(message):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        logging.warning("Telegram credentials missing")
+        logging.warning("⚠️ Telegram credentials missing in GitHub Secrets.")
         return False
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -117,30 +138,47 @@ def format_message(ticker, signals, price, open_price):
     return "\n".join(lines)
 
 def scan_ticker(ticker):
-    df = get_history(ticker)
-    if df.empty:
-        logging.info("%s: no data", ticker)
+    if not in_trading_hours():
+        logging.info(f"⏰ {ticker}: Outside trading hours, skip.")
         return
 
-    signals = compute_signals(df)
-    if not signals:
-        logging.info("%s: no signal", ticker)
-        return
+    try:
+        df = get_history(ticker)
+        if df.empty:
+            logging.info(f"📊 {ticker}: No data found, skip.")
+            return
 
-    latest = df.iloc[-1]
-    yesterday = df.iloc[-2]
-    msg = format_message(
-        ticker,
-        signals,
-        float(latest["Close"]),
-        float(yesterday["Open"])
-    )
-    send_telegram(msg)
-    logging.info("%s: sent %s", ticker, signals)
+        signals = compute_signals(df)
+        if not signals:
+            logging.info(f"🚫 {ticker}: No signal triggered.")
+            return
+
+        latest = df.iloc[-1]
+        yesterday = df.iloc[-2]
+        msg = format_message(
+            ticker,
+            signals,
+            float(latest["Close"]),
+            float(yesterday["Open"])
+        )
+        
+        send_telegram(msg)
+        logging.info(f"🚀 {ticker}: Sent to Telegram! Signals: {signals}")
+        
+    except Exception as e:
+        logging.error(f"❌ {ticker}: Error occurred - {e}")
 
 def main():
+    logging.info("🤖 Starting Bursa Malaysia Scanner...")
+    
+    if not TICKERS:
+        logging.error("❌ No tickers loaded. Exiting.")
+        return
+
     for ticker in TICKERS:
         scan_ticker(ticker)
+        
+    logging.info("✅ Scan finished.")
 
 if __name__ == "__main__":
     main()
