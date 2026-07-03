@@ -9,6 +9,10 @@ import requests
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(message)s")
 
+# --- CONFIGURATION ---
+MIN_PRICE = 0.205
+MAX_PRICE = 7.05
+
 def load_tickers():
     """Reads stocks.json and extracts the ticker codes and names."""
     try:
@@ -25,7 +29,7 @@ def load_tickers():
 
 STOCKS = load_tickers()
 
-# Updated to match your scanner.yml file exactly
+# Match the names in your scanner.yml file
 TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("CHAT_ID")
 
@@ -76,6 +80,7 @@ def compute_signals(df):
     current_price = float(latest["Close"])
     yesterday_open = float(yesterday["Open"])
 
+    # We still need to check if current price is lower than yesterday open for signal logic
     if current_price <= yesterday_open:
         return []
 
@@ -129,12 +134,11 @@ def send_telegram(message):
     r.raise_for_status()
     return True
 
-# Updated to accept 'name' and format it as "NAME (CODE)"
-def format_message(ticker, name, signals, price, open_price):
+# Removed 'open_price' from the message format
+def format_message(ticker, name, signals, price):
     lines = [
         f"*{name} ({ticker})*",
         f"Current: {price:.2f}",
-        f"Yesterday Open: {open_price:.2f}",
         "",
         "Signals detected:",
     ]
@@ -153,19 +157,23 @@ def scan_ticker(ticker, name):
             logging.info(f"📊 {name} ({ticker}): No data found, skip.")
             return
 
+        # --- PRICE FILTER ---
+        current_price = float(df.iloc[-1]["Close"])
+        if not (MIN_PRICE <= current_price <= MAX_PRICE):
+            logging.info(f"💰 {name} ({ticker}): Price {current_price:.3f} out of range ({MIN_PRICE} - {MAX_PRICE}), skip.")
+            return
+
         signals = compute_signals(df)
         if not signals:
             logging.info(f"🚫 {name} ({ticker}): No signal triggered.")
             return
 
         latest = df.iloc[-1]
-        yesterday = df.iloc[-2]
         msg = format_message(
             ticker,
             name,
             signals,
-            float(latest["Close"]),
-            float(yesterday["Open"])
+            float(latest["Close"])
         )
         
         send_telegram(msg)
@@ -181,10 +189,9 @@ def main():
         logging.error("❌ No stocks loaded. Exiting.")
         return
 
-    # Loop through the list of dictionaries
     for stock in STOCKS:
         ticker = stock.get("code")
-        name = stock.get("name", ticker) # Fallback to ticker if name is missing
+        name = stock.get("name", ticker)
         if ticker:
             scan_ticker(ticker, name)
         
