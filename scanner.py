@@ -1,6 +1,6 @@
 import os
 import logging
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 import pandas as pd
 import yfinance as yf
@@ -19,11 +19,17 @@ MARKET_OPEN = time(9, 0)
 MARKET_CLOSE = time(17, 0)
 
 def in_trading_hours(now=None):
-    now = now or datetime.now()
+    now = now or datetime.utcnow() + timedelta(hours=8)
     return MARKET_OPEN <= now.time() <= MARKET_CLOSE
 
 def get_history(ticker):
-    df = yf.download(ticker, period="max", interval="1d", progress=False, auto_adjust=False)
+    df = yf.download(
+        ticker,
+        period="max",
+        interval="1d",
+        progress=False,
+        auto_adjust=False
+    )
     if df is None or df.empty:
         return pd.DataFrame()
     df = df.dropna().copy()
@@ -117,6 +123,10 @@ def format_message(ticker, signals, price, open_price):
     return "\n".join(lines)
 
 def scan_ticker(ticker):
+    if not in_trading_hours():
+        logging.info("%s: outside trading hours, skip", ticker)
+        return
+
     df = get_history(ticker)
     if df.empty:
         logging.info("%s: no data", ticker)
