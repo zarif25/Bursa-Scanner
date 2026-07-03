@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(me
 # --- CONFIGURATION ---
 MIN_PRICE = 0.205
 MAX_PRICE = 7.05
+DEDUP_FILE = "alerted_today.json"
 
 def load_tickers():
     """Reads stocks.json and extracts the ticker codes and names."""
@@ -39,6 +40,34 @@ MARKET_CLOSE = time(17, 0)
 def in_trading_hours(now=None):
     now = now or datetime.utcnow() + timedelta(hours=8)
     return MARKET_OPEN <= now.time() <= MARKET_CLOSE
+
+# --- DEDUP LOGIC ---
+def get_today_str():
+    # Get today's date in Malaysia Time
+    return (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d")
+
+def load_alerted_today():
+    """Loads the list of already alerted stocks for today."""
+    today = get_today_str()
+    try:
+        with open(DEDUP_FILE, "r") as f:
+            data = json.load(f)
+            # If the file is from a previous day, reset the list
+            if data.get("date") == today:
+                return set(data.get("alerted", []))
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    return set()
+
+def save_alerted_today(alerted_set):
+    """Saves the updated list back to the JSON file."""
+    today = get_today_str()
+    data = {
+        "date": today,
+        "alerted": list(alerted_set)
+    }
+    with open(DEDUP_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
 def get_history(ticker):
     df = yf.download(
@@ -80,7 +109,6 @@ def compute_signals(df):
     current_price = float(latest["Close"])
     yesterday_open = float(yesterday["Open"])
 
-    # We still need to check if current price is lower than yesterday open for signal logic
     if current_price <= yesterday_open:
         return []
 
@@ -134,7 +162,6 @@ def send_telegram(message):
     r.raise_for_status()
     return True
 
-# Removed 'open_price' from the message format
 def format_message(ticker, name, signals, price):
     lines = [
         f"*{name} ({ticker})*",
@@ -146,9 +173,14 @@ def format_message(ticker, name, signals, price):
         lines.append(f" - {s}")
     return "\n".join(lines)
 
-def scan_ticker(ticker, name):
+def scan_ticker(ticker, name, alerted_set):
     if not in_trading_hours():
         logging.info(f"⏰ {name} ({ticker}): Outside trading hours, skip.")
+        return
+
+    # Check if already alerted today
+    if ticker in alerted_set:
+        logging.info(f"⏳ {name} ({ticker}): Already alerted today, skip.")
         return
 
     try:
@@ -176,8 +208,14 @@ def scan_ticker(ticker, name):
             float(latest["Close"])
         )
         
-        send_telegram(msg)
-        logging.info(f"🚀 {name} ({ticker}): Sent to Telegram! Signals: {signals}")
+        # Send message
+        if send_telegram(msg):
+            logging.info(f"🚀 {name} ({ticker}): Sent to Telegram! Signals: {signals}")
+            # Add to dedup list and save immediately
+            alerted_set.add(ticker)
+            save_alerted_today(alerted_set)
+        else:
+            logging.error(f"❌ {name} ({ticker}): Failed to send to Telegram.")
         
     except Exception as e:
         logging.error(f"❌ {name} ({ticker}): Error occurred - {e}")
@@ -189,11 +227,15 @@ def main():
         logging.error("❌ No stocks loaded. Exiting.")
         return
 
+    # Load today's already alerted stocks
+    alerted_set = load_alerted_today()
+    logging.info(f"📋 {len(alerted_set)} stocks have already been alerted today.")
+
     for stock in STOCKS:
         ticker = stock.get("code")
         name = stock.get("name", ticker)
         if ticker:
-            scan_ticker(ticker, name)
+            scan_ticker(ticker, name, alerted_set)
         
     logging.info("✅ Scan finished.")
 
