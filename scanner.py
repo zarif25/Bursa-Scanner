@@ -163,7 +163,7 @@ def compute_signals(df):
         if crossed_above(prev["MA50"], prev["MA200"], latest["MA50"], latest["MA200"]):
             signals.append("Golden Cross (GC)")
 
-    # Bullish Zone (Close > EMA20 and Close > EMA200 AND EMA5 > EMA20)
+    # Bullish Zone (Close > EMA200 AND EMA5 > EMA20)
     if not pd.isna(latest["EMA5"]) and not pd.isna(latest["EMA20"]) and not pd.isna(latest["EMA200"]):
         if (
             current_price > latest["EMA20"]
