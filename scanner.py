@@ -1,12 +1,14 @@
 import os
 import json
 import logging
-from datetime import datetime, time, timedelta
+import time as time_module
+from datetime import datetime, time, timedelta, timezone
 
 import pandas as pd
 import yfinance as yf
 import requests
 import holidays
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(message)s")
 
@@ -66,7 +68,7 @@ def should_run():
         logging.info("💪 Force run enabled. Bypassing schedule/holiday checks.")
         return True
 
-    now = datetime.utcnow() + timedelta(hours=8)
+    now = datetime.now(timezone(timedelta(hours=8)))
     
     # Check if weekend (Saturday=5, Sunday=6)
     if now.weekday() >= 5:
@@ -84,7 +86,8 @@ def should_run():
 # --- DEDUP LOGIC ---
 def get_today_str():
     # Get today's date in Malaysia Time
-    return (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d")
+    return datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
+
 
 def load_alerted_today():
     """Loads the list of already alerted stocks for today."""
@@ -140,6 +143,7 @@ def compute_signals(df):
     df["MA200"] = df["Close"].rolling(200).mean()
     df["EMA5"] = df["Close"].ewm(span=5, adjust=False).mean()
     df["EMA20"] = df["Close"].ewm(span=20, adjust=False).mean()
+    df["EMA50"] = df["Close"].ewm(span=50, adjust=False).mean()
     df["EMA200"] = df["Close"].ewm(span=200, adjust=False).mean()
     df["Vol20"] = df["Volume"].rolling(20).mean()
 
@@ -163,13 +167,9 @@ def compute_signals(df):
         if crossed_above(prev["MA50"], prev["MA200"], latest["MA50"], latest["MA200"]):
             signals.append("Golden Cross (GC)")
 
-    # Bullish Zone (Close > EMA200 AND EMA5 > EMA20)
-    if not pd.isna(latest["EMA5"]) and not pd.isna(latest["EMA20"]) and not pd.isna(latest["EMA200"]):
-        if (
-            current_price > latest["EMA20"]
-            and current_price > latest["EMA200"]
-            and latest["EMA5"] > latest["EMA20"]
-        ):
+    # Bullish Zone (Price > EMA20 > EMA50 > EMA200)
+    if not pd.isna(latest["EMA20"]) and not pd.isna(latest["EMA50"]) and not pd.isna(latest["EMA200"]):
+        if current_price > latest["EMA20"] > latest["EMA50"] > latest["EMA200"]:
             signals.append("Bullish Zone")
 
     high_52w = float(df.tail(252)["High"].max())
@@ -178,10 +178,10 @@ def compute_signals(df):
 
     all_time_high = float(df["High"].max())
     if current_price >= all_time_high * 0.995:
-        signals.append("All-Time High (ATH)")
+        signals.append("2-Year High (2YH)")
 
     # Pending Breakout (within PENDING_BREAKOUT_PCT of 52WH)
-    if current_price >= high_52w * (1 - PENDING_BREAKOUT_PCT / 100):
+    if high_52w * (1 - PENDING_BREAKOUT_PCT / 100) <= current_price < high_52w * 0.995:
         signals.append("Pending Breakout")
 
     # Volume Surge (volume >= VOLUME_SURGE_MULT * 20-day average)
@@ -216,57 +216,45 @@ def format_message(ticker, name, signals, price):
         lines.append(f" - {s}")
     return "\n".join(lines)
 
-def scan_ticker(ticker, name, alerted_set):
-    # Check if already alerted today
-    if ticker in alerted_set:
-        logging.info(f"⏳ {name} ({ticker}): Already alerted today, skip.")
-        return
-
+def scan_ticker(ticker, name, alerted_set=None):
     try:
         df = get_history(ticker)
         if df.empty:
             logging.info(f"📊 {name} ({ticker}): No data found, skip.")
-            return
+            return None
 
         # --- PRE-CONDITIONS ---
         # 1. Price Range check
         current_price = float(df.iloc[-1]["Close"])
         if not (MIN_PRICE <= current_price <= MAX_PRICE):
             logging.info(f"💰 {name} ({ticker}): Price {current_price:.3f} out of range ({MIN_PRICE} - {MAX_PRICE}), skip.")
-            return
+            return None
 
         # 2. Volume filter (must be above MIN_VOLUME)
         current_volume = float(df.iloc[-1]["Volume"])
         if current_volume <= MIN_VOLUME:
             logging.info(f"📊 {name} ({ticker}): Volume {current_volume:,.0f} <= {MIN_VOLUME:,.0f}, skip.")
-            return
+            return None
 
         signals = compute_signals(df)
         if not signals:
             logging.info(f"🚫 {name} ({ticker}): No signal triggered.")
-            return
+            return None
 
-        latest = df.iloc[-1]
-        msg = format_message(
-            ticker,
-            name,
-            signals,
-            float(latest["Close"])
-        )
-        
-        # Send message
-        if send_telegram(msg):
-            logging.info(f"🚀 {name} ({ticker}): Sent to Telegram! Signals: {signals}")
-            # Add to dedup list and save immediately
-            alerted_set.add(ticker)
-            save_alerted_today(alerted_set)
-        else:
-            logging.error(f"❌ {name} ({ticker}): Failed to send to Telegram.")
+        return {
+            "ticker": ticker,
+            "name": name,
+            "price": current_price,
+            "signals": signals
+        }
         
     except Exception as e:
         logging.error(f"❌ {name} ({ticker}): Error occurred - {e}")
+        return None
 
 def main():
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     logging.info("🤖 Starting Bursa Malaysia Scanner...")
     
     # Check if we should run today
@@ -282,13 +270,50 @@ def main():
     alerted_set = load_alerted_today()
     logging.info(f"📋 {len(alerted_set)} stocks have already been alerted today.")
 
+    stocks_to_scan = []
     for stock in STOCKS:
         ticker = stock.get("code")
         name = stock.get("name", ticker)
-        if ticker:
-            scan_ticker(ticker, name, alerted_set)
-        
-    logging.info("✅ Scan finished.")
+        if ticker in alerted_set:
+            logging.info(f"⏳ {name} ({ticker}): Already alerted today, skip.")
+        elif ticker:
+            stocks_to_scan.append(stock)
+
+    results = []
+    max_workers = 15
+    logging.info(f"Scanning {len(stocks_to_scan)} stocks in parallel (max_workers={max_workers})...")
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_stock = {
+            executor.submit(scan_ticker, s.get("code"), s.get("name", s.get("code"))): s 
+            for s in stocks_to_scan
+        }
+        for future in as_completed(future_to_stock):
+            res = future.result()
+            if res:
+                results.append(res)
+
+    logging.info(f"Scan finished. Found {len(results)} stocks with signals.")
+
+    # Process alerts sequentially in the main thread
+    if results:
+        results.sort(key=lambda x: x["ticker"])
+        for res in results:
+            ticker = res["ticker"]
+            name = res["name"]
+            price = res["price"]
+            signals = res["signals"]
+            
+            # Format and send Telegram alert
+            msg = format_message(ticker, name, signals, price)
+            if send_telegram(msg):
+                logging.info(f"🚀 {name} ({ticker}): Sent to Telegram! Signals: {signals}")
+                alerted_set.add(ticker)
+                save_alerted_today(alerted_set)
+                # Sleep briefly between messages to respect Telegram rate limits
+                time_module.sleep(0.5)
+            else:
+                logging.error(f"❌ {name} ({ticker}): Failed to send to Telegram.")
 
 if __name__ == "__main__":
     main()
