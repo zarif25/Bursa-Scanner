@@ -201,9 +201,32 @@ def send_telegram(message):
         "text": message,
         "parse_mode": "Markdown"
     }
-    r = requests.post(url, data=payload, timeout=20)
-    r.raise_for_status()
-    return True
+    
+    try:
+        r = requests.post(url, data=payload, timeout=20)
+        r.raise_for_status()
+        return True
+    except requests.exceptions.HTTPError as e:
+        if e.response is not None and e.response.status_code == 429:
+            try:
+                retry_after = int(e.response.json().get("parameters", {}).get("retry_after", 30))
+            except Exception:
+                retry_after = 30
+            logging.warning(f"⚠️ Telegram rate limit hit (429). Retrying after {retry_after} seconds...")
+            time_module.sleep(retry_after)
+            try:
+                r = requests.post(url, data=payload, timeout=20)
+                r.raise_for_status()
+                return True
+            except Exception as retry_err:
+                logging.error(f"❌ Telegram API retry failed: {retry_err}")
+                return False
+        else:
+            logging.error(f"❌ Telegram HTTP Error: {e}")
+            return False
+    except Exception as e:
+        logging.error(f"❌ Telegram connection/request failed: {e}")
+        return False
 
 def format_message(ticker, name, signals, price):
     lines = [
@@ -253,8 +276,6 @@ def scan_ticker(ticker, name, alerted_set=None):
         return None
 
 def main():
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-
     logging.info("🤖 Starting Bursa Malaysia Scanner...")
     
     # Check if we should run today
@@ -279,19 +300,77 @@ def main():
         elif ticker:
             stocks_to_scan.append(stock)
 
-    results = []
-    max_workers = 15
-    logging.info(f"Scanning {len(stocks_to_scan)} stocks in parallel (max_workers={max_workers})...")
+    if not stocks_to_scan:
+        logging.info("📋 All stocks have already been alerted today. Nothing to scan.")
+        return
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_stock = {
-            executor.submit(scan_ticker, s.get("code"), s.get("name", s.get("code"))): s 
-            for s in stocks_to_scan
-        }
-        for future in as_completed(future_to_stock):
-            res = future.result()
-            if res:
-                results.append(res)
+    tickers_to_download = [s.get("code") for s in stocks_to_scan]
+    logging.info(f"Downloading data for {len(tickers_to_download)} stocks in bulk...")
+
+    try:
+        df_all = yf.download(
+            tickers_to_download,
+            period="2y",
+            interval="1d",
+            progress=False,
+            group_by="ticker",
+            auto_adjust=False
+        )
+    except Exception as e:
+        logging.error(f"❌ Failed to bulk download tickers: {e}")
+        return
+
+    results = []
+    logging.info("Analyzing stock data...")
+
+    for stock in stocks_to_scan:
+        ticker = stock.get("code")
+        name = stock.get("name", ticker)
+        
+        try:
+            # Check if ticker is present in downloaded columns
+            if isinstance(df_all.columns, pd.MultiIndex):
+                if ticker not in df_all.columns.levels[0]:
+                    logging.info(f"📊 {name} ({ticker}): No data found in bulk download, skip.")
+                    continue
+                df = df_all[ticker].dropna().copy()
+            else:
+                df = df_all.dropna().copy()
+
+            if df.empty:
+                logging.info(f"📊 {name} ({ticker}): Data is empty after dropna, skip.")
+                continue
+
+            # Standardize columns to match compute_signals expectations
+            df.columns = [str(c).capitalize() for c in df.columns]
+
+            # --- PRE-CONDITIONS ---
+            # 1. Price Range check
+            current_price = float(df.iloc[-1]["Close"])
+            if not (MIN_PRICE <= current_price <= MAX_PRICE):
+                logging.info(f"💰 {name} ({ticker}): Price {current_price:.3f} out of range ({MIN_PRICE} - {MAX_PRICE}), skip.")
+                continue
+
+            # 2. Volume filter (must be above MIN_VOLUME)
+            current_volume = float(df.iloc[-1]["Volume"])
+            if current_volume <= MIN_VOLUME:
+                logging.info(f"📊 {name} ({ticker}): Volume {current_volume:,.0f} <= {MIN_VOLUME:,.0f}, skip.")
+                continue
+
+            signals = compute_signals(df)
+            if not signals:
+                logging.info(f"🚫 {name} ({ticker}): No signal triggered.")
+                continue
+
+            results.append({
+                "ticker": ticker,
+                "name": name,
+                "price": current_price,
+                "signals": signals
+            })
+
+        except Exception as e:
+            logging.error(f"❌ {name} ({ticker}): Error occurred during scan - {e}")
 
     logging.info(f"Scan finished. Found {len(results)} stocks with signals.")
 
