@@ -45,7 +45,7 @@ on:
 concurrency:
   group: bursa-scanner-main
   cancel-in-progress: false
-  
+
 jobs:
   scan:
     name: Scan Bursa Malaysia
@@ -80,13 +80,56 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -n "$(git status --porcelain alerted_today.json)" ]; then
+
+          if [ -z "$(git status --porcelain alerted_today.json)" ]; then
+            echo "No changes to alerted_today.json"
+            exit 0
+          fi
+
+          cp alerted_today.json /tmp/my_alerted.json
+
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+
+            python3 - <<'PY'
+          import json
+
+          with open("/tmp/my_alerted.json") as f:
+              mine = json.load(f)
+          with open("alerted_today.json") as f:
+              remote = json.load(f)
+
+          merged_alerted = sorted(set(mine.get("alerted", [])) | set(remote.get("alerted", [])))
+          merged = {
+              "date": mine.get("date") or remote.get("date"),
+              "alerted": merged_alerted,
+          }
+
+          with open("alerted_today.json", "w") as f:
+              json.dump(merged, f, indent=4)
+              f.write("\n")
+          PY
+
+            if [ -z "$(git status --porcelain alerted_today.json)" ]; then
+              echo "Already up to date after merge, nothing to push"
+              exit 0
+            fi
+
             git add alerted_today.json
             git commit -m "Update alerted_today.json [skip ci]"
-            git pull --rebase origin main && git push
-          else
-            echo "No changes to alerted_today.json"
-          fi
+
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt $attempt"
+              exit 0
+            fi
+
+            echo "Push attempt $attempt lost the race, retrying..."
+            sleep $((RANDOM % 5 + 1))
+          done
+
+          echo "::error::Failed to push alerted_today.json after 5 attempts"
+          exit 1
 
       - name: Upload scan log (on failure)
         if: failure()
