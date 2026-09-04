@@ -21,14 +21,32 @@ VOLUME_SURGE_MULT = 2.0
 DEDUP_FILE = "alerted_today.json"
 
 def load_tickers():
-    """Reads stocks.json and extracts the ticker codes and names."""
+    """Reads tickers and names from Bursa_Malaysia.csv or stocks.json."""
+    stocks = []
+    if os.path.exists("Bursa_Malaysia.csv"):
+        try:
+            with open("Bursa_Malaysia.csv", "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    parts = line.split(",")
+                    code = parts[0].strip()
+                    name = parts[1].strip() if len(parts) > 1 else code
+                    clean_name = name[:-3] if name.endswith(".KL") else name
+                    stocks.append({"code": code, "name": clean_name})
+            logging.info(f"✅ Successfully loaded {len(stocks)} tickers from Bursa_Malaysia.csv")
+            return stocks
+        except Exception as e:
+            logging.error(f"❌ Error reading Bursa_Malaysia.csv: {e}")
+
     try:
-        with open("stocks.json", "r") as f:
+        with open("stocks.json", "r", encoding="utf-8") as f:
             data = json.load(f)
             logging.info(f"✅ Successfully loaded {len(data)} tickers from stocks.json")
             return data
     except FileNotFoundError:
-        logging.error("❌ stocks.json file not found! Make sure it is in the same directory.")
+        logging.error("❌ Neither Bursa_Malaysia.csv nor stocks.json found!")
         return []
     except Exception as e:
         logging.error(f"❌ Error reading stocks.json: {e}")

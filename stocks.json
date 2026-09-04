@@ -1384,6 +1384,26 @@
     "name": "RT"
   },
   {
+    "code": "0462.KL",
+    "name": "LIFTECH"
+  },
+  {
+    "code": "0463.KL",
+    "name": "ECKEM"
+  },
+  {
+    "code": "0465.KL",
+    "name": "RESTNGO"
+  },
+  {
+    "code": "0466.KL",
+    "name": "SRKKAI"
+  },
+  {
+    "code": "0467.KL",
+    "name": "ENEST"
+  },
+  {
     "code": "1015.KL",
     "name": "AMBANK"
   },
@@ -1430,10 +1450,6 @@
   {
     "code": "1295.KL",
     "name": "PBBANK"
-  },
-  {
-    "code": "1368.KL",
-    "name": "EDGENTA"
   },
   {
     "code": "1481.KL",
@@ -4298,5 +4314,9 @@
   {
     "code": "9997.KL",
     "name": "PENSONI"
+  },
+  {
+    "code": "5356.KL",
+    "name": "STRATUS"
   }
 ]
