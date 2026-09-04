@@ -27,8 +27,6 @@ on:
     - cron: '15 4 * * 1-5'
     # 12:45 PM MYT -> 4:45 AM UTC
     - cron: '45 4 * * 1-5'
-    # 2:15 PM MYT -> 6:15 AM UTC
-    - cron: '15 6 * * 1-5'
     # 2:45 PM MYT -> 6:45 AM UTC
     - cron: '45 6 * * 1-5'
     # 3:15 PM MYT -> 7:15 AM UTC
@@ -39,8 +37,6 @@ on:
     - cron: '15 8 * * 1-5'
     # 4:45 PM MYT -> 8:45 AM UTC
     - cron: '45 8 * * 1-5'
-    # 5:15 PM MYT -> 9:15 AM UTC
-    - cron: '15 9 * * 1-5'
 
 concurrency:
   group: bursa-scanner-main
@@ -56,15 +52,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v4
         with:
           clean: true
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5.3.0
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
