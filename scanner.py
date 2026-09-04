@@ -141,10 +141,6 @@ def compute_signals(df):
     df = df.copy()
     df["MA50"] = df["Close"].rolling(50).mean()
     df["MA200"] = df["Close"].rolling(200).mean()
-    df["EMA5"] = df["Close"].ewm(span=5, adjust=False).mean()
-    df["EMA20"] = df["Close"].ewm(span=20, adjust=False).mean()
-    df["EMA50"] = df["Close"].ewm(span=50, adjust=False).mean()
-    df["EMA200"] = df["Close"].ewm(span=200, adjust=False).mean()
     df["Vol20"] = df["Volume"].rolling(20).mean()
 
     latest = df.iloc[-1]
@@ -167,11 +163,6 @@ def compute_signals(df):
         if crossed_above(prev["MA50"], prev["MA200"], latest["MA50"], latest["MA200"]):
             signals.append("Golden Cross (GC)")
 
-    # Bullish Zone (Price > EMA20 > EMA50 > EMA200)
-    if not pd.isna(latest["EMA20"]) and not pd.isna(latest["EMA50"]) and not pd.isna(latest["EMA200"]):
-        if current_price > latest["EMA20"] > latest["EMA50"] > latest["EMA200"]:
-            signals.append("Bullish Zone")
-
     high_52w = float(df.tail(252)["High"].max())
     if current_price >= high_52w * 0.995:
         signals.append("52-Week High (52WH)")
@@ -179,10 +170,6 @@ def compute_signals(df):
     all_time_high = float(df["High"].max())
     if current_price >= all_time_high * 0.995:
         signals.append("2-Year High (2YH)")
-
-    # Pending Breakout (within PENDING_BREAKOUT_PCT of 52WH)
-    if high_52w * (1 - PENDING_BREAKOUT_PCT / 100) <= current_price < high_52w * 0.995:
-        signals.append("Pending Breakout")
 
     # Volume Surge (volume >= VOLUME_SURGE_MULT * 20-day average)
     if not pd.isna(latest["Vol20"]) and float(latest["Volume"]) >= float(latest["Vol20"]) * VOLUME_SURGE_MULT:
