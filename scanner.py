@@ -1,5 +1,6 @@
 import sys
 import os
+import csv
 import json
 import logging
 import time as time_module
@@ -59,7 +60,7 @@ MARKET_OPEN = time(9, 0)
 MARKET_CLOSE = time(17, 30)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STOCKS_FILE = os.path.join(BASE_DIR, "stocks.json")
+STOCKS_FILE = os.path.join(BASE_DIR, "Bursa_Malaysia.csv")
 DEDUP_FILE = os.path.join(BASE_DIR, "alerted_today.json")
 CACHE_FILE = os.path.join(BASE_DIR, "history_cache.csv")
 CACHE_META_FILE = os.path.join(BASE_DIR, "cache_meta.json")
@@ -82,17 +83,39 @@ SIG_VOL = "Volume Surge"
 # TICKER UNIVERSE
 # =============================================================================
 def load_tickers():
-    """Reads stocks.json -> list of {"code": "1015.KL", "name": "AMBANK"}."""
+    """Reads Bursa_Malaysia.csv (no header row: code,name) -> list of
+    {"code": "1015.KL", "name": "AMBANK"}. The name column in this file
+    carries a stray ".KL" suffix (e.g. "AMBANK.KL") which is stripped here
+    so alerts show the plain company name."""
+    filename = os.path.basename(STOCKS_FILE)
     try:
-        with open(STOCKS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        logging.info(f"✅ Loaded {len(data)} tickers from stocks.json")
+        with open(STOCKS_FILE, "r", encoding="utf-8", newline="") as f:
+            reader = csv.reader(f)
+            data = []
+            skipped = 0
+            for row_num, row in enumerate(reader, start=1):
+                if not row or all(not cell.strip() for cell in row):
+                    continue  # blank line
+                if len(row) < 2:
+                    logging.warning(f"⚠️ {filename} row {row_num}: expected 2 columns, got {row!r} — skipped.")
+                    skipped += 1
+                    continue
+                code = row[0].strip()
+                name = row[1].strip()
+                if name.upper().endswith(".KL"):
+                    name = name[:-3]
+                if not code or not name:
+                    logging.warning(f"⚠️ {filename} row {row_num}: empty code/name {row!r} — skipped.")
+                    skipped += 1
+                    continue
+                data.append({"code": code, "name": name})
+        logging.info(f"✅ Loaded {len(data)} tickers from {filename}" + (f" ({skipped} row(s) skipped)" if skipped else ""))
         return data
     except FileNotFoundError:
         logging.error(f"❌ {STOCKS_FILE} not found!")
         return []
     except Exception as e:
-        logging.error(f"❌ Error reading stocks.json: {e}")
+        logging.error(f"❌ Error reading {filename}: {e}")
         return []
 
 
