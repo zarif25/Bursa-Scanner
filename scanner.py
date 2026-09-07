@@ -30,8 +30,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(me
 #    b. History Depth     : >= MIN_HISTORY_DAYS trading days of data
 #    c. Price Range       : MIN_PRICE <= Close <= MAX_PRICE
 #    d. Minimum Volume    : Volume > MIN_VOLUME
-#    e. Positive candle: Close > yesterday's Open
-
+#    e. Positive Candle   : today's Close > yesterday's Open
+#
 # 2. TECHNICAL SIGNALS (any one triggers an alert)
 #    - Price Up            : Close >= (1 + PRICE_UP_PCT) x Close from 2 days ago
 #    - Golden Cross (GC)   : MA50 crosses above MA200 (today MA50 > MA200,
@@ -343,11 +343,20 @@ def send_telegram(message):
 
 
 def format_results(results, run_time=None):
-    """List-style alert, split into <=4096-char chunks.
+    """Per-stock block alert, split into <=4096-char chunks.
 
     📊 Bursa Scanner — 2026-09-07 10:45 MYT
-    AMBANK (1015): RM 6.88 🔥 Price Up | 52-Week High (52WH)
-    ABMB (2488): RM 4.98 🚀 52-Week High (52WH)
+
+    <b>AMBANK (1015)</b>
+    Current: RM 6.88
+    Signals detected:
+     - Price Up
+     - 52-Week High (52WH)
+
+    <b>ABMB (2488)</b>
+    Current: RM 4.98
+    Signals detected:
+     - 52-Week High (52WH)
     """
     if not results:
         return []
@@ -361,26 +370,18 @@ def format_results(results, run_time=None):
         name = html.escape(r["name"])
         price = r["price"]
         price_str = f"{price:.2f}" if abs(price - round(price, 2)) < 1e-5 else f"{price:.3f}"
-        sigs = r["signals"]
-
-        if len(sigs) > 1:
-            emoji = "🔥"
-        elif SIG_GC in sigs:
-            emoji = "✨"
-        elif SIG_52WH in sigs or SIG_2YH in sigs:
-            emoji = "🚀"
-        elif SIG_PRICE_UP in sigs:
-            emoji = "📈"
-        elif SIG_VOL in sigs:
-            emoji = "⚡"
-        else:
-            emoji = "🟢"
-
-        entries.append(f"{name} ({code}): RM {price_str} {emoji} {' | '.join(sigs)}")
+        sig_lines = "\n".join(f" - {sig}" for sig in r["signals"])
+        entry = (
+            f"<b>{name} ({code})</b>\n"
+            f"Current: RM {price_str}\n"
+            f"Signals detected:\n"
+            f"{sig_lines}"
+        )
+        entries.append(entry)
 
     messages, chunk, cur_len = [], [], len(header)
     for entry in entries:
-        entry_len = len(entry) + 2
+        entry_len = len(entry) + 2  # +2 for the blank-line separator between entries
         if chunk and cur_len + entry_len > TELEGRAM_MAX_CHARS - 50:
             messages.append(header + "\n\n".join(chunk))
             chunk, cur_len = [entry], len(header) + entry_len
@@ -493,4 +494,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
