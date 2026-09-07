@@ -8,10 +8,11 @@ Scans all Bursa Malaysia stocks **once daily at 8:00 AM MYT** (End-Of-Day, pre-m
 
 | Signal | Condition |
 |---|---|
-| 📗 Bullish Zone | Price > EMA20 > EMA50 > EMA200 |
-| 🔥 Pending Breakout | Price within 7% of the 52-week high (but not yet at it) |
+| 🚀 52-Week High (52WH) | Price at or near 52-week high |
+| 📈 2-Year High (2YH) | Price at or near 2-year high |
+| ⚡ Volume Surge | Volume >= 1.5x 20-day average volume |
 
-## Rules (must pass before either signal can fire)
+## Rules (must pass before any signal can fire)
 
 - Price closed **above** yesterday's / the previous daily close
 - Volume **above 500,000** shares
@@ -24,10 +25,11 @@ All matching stocks for the day are sent as a consolidated list with stock name,
 ```html
 <b>📊 EOD Bursa Scanner — 2026-09-07</b>
 
-MAYBANK (1155): RM 9.850 🟢 Bullish Zone
-PCHEM (5183): RM 7.200 🚀 Pending Breakout
-TOPGLOVE (7113): RM 1.234 🔥 Bullish Zone | Pending Breakout
+MAYBANK (1155): RM 9.850 🚀 52-Week High (52WH)
+PCHEM (5183): RM 7.200 ⚡ Volume Surge
+TOPGLOVE (7113): RM 1.234 🔥 52-Week High (52WH) | 2-Year High (2YH)
 ```
+
 
 
 

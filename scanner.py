@@ -29,7 +29,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(me
 MIN_PRICE = 0.205
 MAX_PRICE = 7.05
 MIN_VOLUME = 500_000
-PENDING_BREAKOUT_PCT = 7.0
+VOLUME_SURGE_MULT = 1.5
+
 
 
 
@@ -154,11 +155,12 @@ def get_history(ticker):
     return df
 
 def compute_signals(df):
-    """EOD Bursa Scanner signal engine (EODBS).
+    """Bursa Malaysia Scanner signal engine (Bursa-Scanner).
 
     Triggers:
-      - Bullish Zone     : Price > EMA20 > EMA50 > EMA200
-      - Pending Breakout : price within PENDING_BREAKOUT_PCT of 52-week high
+      - 52-Week High (52WH) : Price at or near 52-week high
+      - 2-Year High (2YH)   : Price at or near 2-year high
+      - Volume Surge        : Volume >= 1.5x 20-day average volume
 
     Rule: today's close must be above the previous trading day's close.
     """
@@ -166,9 +168,7 @@ def compute_signals(df):
         return []
 
     df = df.copy()
-    df["EMA20"] = df["Close"].ewm(span=20, adjust=False).mean()
-    df["EMA50"] = df["Close"].ewm(span=50, adjust=False).mean()
-    df["EMA200"] = df["Close"].ewm(span=200, adjust=False).mean()
+    df["Vol20"] = df["Volume"].rolling(window=20).mean()
 
     latest = df.iloc[-1]
     prev = df.iloc[-2]
@@ -181,18 +181,20 @@ def compute_signals(df):
 
     signals = []
 
-    # Bullish Zone (Price > EMA20 > EMA50 > EMA200)
-    if not pd.isna(latest["EMA20"]) and not pd.isna(latest["EMA50"]) and not pd.isna(latest["EMA200"]):
-        if current_price > latest["EMA20"] > latest["EMA50"] > latest["EMA200"]:
-            signals.append("Bullish Zone")
-
     high_52w = float(df.tail(252)["High"].max())
+    if high_52w > 0 and current_price >= high_52w * 0.995:
+        signals.append("52-Week High (52WH)")
 
-    # Pending Breakout (within PENDING_BREAKOUT_PCT of 52WH, but not yet at it)
-    if high_52w > 0 and high_52w * (1 - PENDING_BREAKOUT_PCT / 100) <= current_price < high_52w * 0.995:
-        signals.append("Pending Breakout")
+    all_time_high = float(df["High"].max())
+    if all_time_high > 0 and current_price >= all_time_high * 0.995:
+        signals.append("2-Year High (2YH)")
+
+    # Volume Surge (volume >= 1.5x 20-day average)
+    if not pd.isna(latest["Vol20"]) and float(latest["Vol20"]) > 0 and float(latest["Volume"]) >= float(latest["Vol20"]) * VOLUME_SURGE_MULT:
+        signals.append("Volume Surge")
 
     return signals
+
 
 
 
@@ -285,22 +287,22 @@ def format_results_table(results):
         price = r["price"]
         price_str = f"{price:.2f}" if abs(price - round(price, 2)) < 1e-5 else f"{price:.3f}"
         
-        has_bullish = "Bullish Zone" in r["signals"]
-        has_breakout = "Pending Breakout" in r["signals"]
+        has_52wh = "52-Week High (52WH)" in r["signals"]
+        has_2yh = "2-Year High (2YH)" in r["signals"]
+        has_vol = "Volume Surge" in r["signals"]
         
-        if has_bullish and has_breakout:
+        if len(r["signals"]) > 1:
             emoji = "🔥"
-            trigger_text = "Bullish Zone | Pending Breakout"
-        elif has_breakout:
+        elif has_52wh:
             emoji = "🚀"
-            trigger_text = "Pending Breakout"
-        elif has_bullish:
-            emoji = "🟢"
-            trigger_text = "Bullish Zone"
-        else:
+        elif has_2yh:
+            emoji = "📈"
+        elif has_vol:
             emoji = "⚡"
-            trigger_text = " | ".join(r["signals"])
+        else:
+            emoji = "🟢"
             
+        trigger_text = " | ".join(r["signals"]) if r["signals"] else "Volume & Price Gain"
         entry = f"{name} ({code}): RM {price_str} {emoji} {trigger_text}"
         entries.append(entry)
 
