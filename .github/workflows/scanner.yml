@@ -1,18 +1,33 @@
 name: Bursa Scanner (Intraday)
 
 on:
+  # ------------------------------------------------------------------
+  # PRIMARY trigger: cron-job.org -> GitHub repository_dispatch.
+  # Tepat masa (biasanya < 1 min). Set cron-job.org pada 09:15-12:45 &
+  # 14:15-16:45 MYT setiap 30 min, dan 17:15 MYT untuk EOD.
+  #
+  # Endpoint : POST https://api.github.com/repos/zarif25/Bursa-Scanner/dispatches
+  # Headers  : Authorization: Bearer <PAT dengan scope repo/contents:write>
+  #            Accept: application/vnd.github+json
+  # Body     : {"event_type":"run-scan"}
+  # ------------------------------------------------------------------
+  repository_dispatch:
+    types: [run-scan]
+
+  # ------------------------------------------------------------------
+  # BACKUP trigger: GitHub cron (UTC). Sengaja dianjak +10 min daripada
+  # slot cron-job.org supaya ia hanya "menyelamat" jika primary tidak
+  # jalan. GitHub cron boleh lewat/ditinggalkan ketika beban tinggi --
+  # jangan bergantung padanya sebagai trigger utama.
+  #
+  # MYT  : 09:25 .. 12:55 dan 14:25 .. 16:55 (setiap 30 min), 17:25 EOD
+  # UTC  : 01:25 .. 04:55 dan 06:25 .. 08:55,             09:25
+  # ------------------------------------------------------------------
   schedule:
-    # GitHub Actions cron is UTC. MYT = UTC+8.
-    #
-    # Morning session  : 09:15, 09:45, 10:15, 10:45, 11:15, 11:45, 12:15, 12:45 MYT
-    #                  -> 01:15 .. 04:45 UTC
-    # Afternoon session: 14:15, 14:45, 15:15, 15:45, 16:15, 16:45 MYT
-    #                  -> 06:15 .. 08:45 UTC
-    # Final EOD scan   : 17:15 MYT -> 09:15 UTC
-    #
-    # Note: GitHub cron can be delayed by several minutes at peak load.
-    - cron: "15,45 1-4,6-8 * * 1-5"
-    - cron: "15 9 * * 1-5"
+    - cron: "25,55 1-4,6-8 * * 1-5"
+    - cron: "25 9 * * 1-5"
+
+  # Manual run dari tab Actions
   workflow_dispatch:
     inputs:
       force:
@@ -20,12 +35,14 @@ on:
         required: false
         default: "false"
 
+# Halang dua run bertindih (dispatch + schedule serentak).
+# cancel-in-progress: false = run kedua tunggu, bukan batal.
 concurrency:
   group: bursa-scanner
   cancel-in-progress: false
 
 permissions:
-  contents: write   # needed to commit alerted_today.json back to the repo
+  contents: write   # perlu untuk commit alerted_today.json balik ke repo
 
 jobs:
   scan:
@@ -34,10 +51,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -47,18 +64,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Log trigger source
+        run: |
+          echo "Trigger : ${{ github.event_name }}"
+          echo "UTC now : $(date -u '+%Y-%m-%d %H:%M:%S')"
+          echo "MYT now : $(TZ=Asia/Kuala_Lumpur date '+%Y-%m-%d %H:%M:%S')"
+
       - name: Run scanner
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
           FORCE_RUN: ${{ github.event.inputs.force || 'false' }}
+          TRIGGER_SOURCE: ${{ github.event_name }}
         run: python scanner.py
 
-      # alerted_today.json (dedup) and history_cache.csv/cache_meta.json
-      # (once-daily baseline cache) must persist between runs -- runners are
-      # ephemeral, so commit them back to the repo. history_cache.csv only
-      # actually changes on the first run of each calendar day; other runs
-      # only touch alerted_today.json, so most commits here are small.
+      # alerted_today.json (dedup) dan history_cache.csv/cache_meta.json
+      # (baseline cache sekali sehari) mesti kekal antara run -- runner
+      # adalah ephemeral, jadi commit balik ke repo.
       - name: Persist scanner state (dedup + history cache)
         if: always()
         run: |
