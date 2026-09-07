@@ -1,120 +1,72 @@
-name: EOD Bursa Scanner
+name: Bursa Scanner (Intraday)
 
 on:
-  repository_dispatch:
-    types: [run-scan]
+  schedule:
+    # GitHub Actions cron is UTC. MYT = UTC+8.
+    #
+    # Morning session  : 09:15, 09:45, 10:15, 10:45, 11:15, 11:45, 12:15, 12:45 MYT
+    #                  -> 01:15 .. 04:45 UTC
+    # Afternoon session: 14:15, 14:45, 15:15, 15:45, 16:15, 16:45 MYT
+    #                  -> 06:15 .. 08:45 UTC
+    # Final EOD scan   : 17:15 MYT -> 09:15 UTC
+    #
+    # Note: GitHub cron can be delayed by several minutes at peak load.
+    - cron: "15,45 1-4,6-8 * * 1-5"
+    - cron: "15 9 * * 1-5"
   workflow_dispatch:
     inputs:
-      reason:
-        description: 'Reason for manual run (optional)'
-        required: false
-        default: 'Manual test'
       force:
-        description: 'Force run (bypass schedule/holiday checks)'
+        description: "Bypass weekday/holiday/trading-hours check"
         required: false
-        type: boolean
-        default: true
-  schedule:
-    # 8:00 AM GMT+8 (UTC+8 / Malaysia Time) = 00:00 UTC
-    # Set to 00:05 UTC (8:05 AM GMT+8, Mon-Fri) with a 5-minute buffer to avoid top-of-hour GitHub Actions congestion
-    - cron: '5 0 * * 1-5'
-
-
+        default: "false"
 
 concurrency:
-  group: eod-bursa-scanner
+  group: bursa-scanner
   cancel-in-progress: false
+
+permissions:
+  contents: write   # needed to commit alerted_today.json back to the repo
 
 jobs:
   scan:
-    name: EOD Scan Bursa Malaysia
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: write
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          clean: true
 
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Run EOD market scanner
+      - name: Run scanner
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-          FORCE_RUN: ${{ inputs.force || 'false' }}
+          FORCE_RUN: ${{ github.event.inputs.force || 'false' }}
         run: python scanner.py
 
-      - name: Commit dedup tracking file
+      # alerted_today.json must persist between runs for the
+      # "Not Alerted Today" pre-filter to work. Runners are ephemeral,
+      # so commit it back to the repo.
+      - name: Persist alerted_today.json
         if: always()
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          if [ -z "$(git status --porcelain alerted_today.json)" ]; then
-            echo "No changes to alerted_today.json"
-            exit 0
+          git config user.name "bursa-scanner-bot"
+          git config user.email "actions@github.com"
+          git add alerted_today.json || true
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update alerted_today.json [skip ci]"
+            git pull --rebase origin ${{ github.ref_name }} || true
+            git push
+          else
+            echo "No dedup changes to commit."
           fi
-
-          cp alerted_today.json /tmp/my_alerted.json
-
-          for attempt in 1 2 3 4 5; do
-            git fetch origin main
-            git reset --hard origin/main
-
-            python3 - <<'PY'
-          import json
-
-          with open("/tmp/my_alerted.json") as f:
-              mine = json.load(f)
-          with open("alerted_today.json") as f:
-              remote = json.load(f)
-
-          merged_alerted = sorted(set(mine.get("alerted", [])) | set(remote.get("alerted", [])))
-          merged = {
-              "date": mine.get("date") or remote.get("date"),
-              "alerted": merged_alerted,
-          }
-
-          with open("alerted_today.json", "w") as f:
-              json.dump(merged, f, indent=4)
-              f.write("\n")
-          PY
-
-            if [ -z "$(git status --porcelain alerted_today.json)" ]; then
-              echo "Already up to date after merge, nothing to push"
-              exit 0
-            fi
-
-            git add alerted_today.json
-            git commit -m "Update alerted_today.json [skip ci]"
-
-            if git push origin HEAD:main; then
-              echo "Pushed on attempt $attempt"
-              exit 0
-            fi
-
-            echo "Push attempt $attempt lost the race, retrying..."
-            sleep $((RANDOM % 5 + 1))
-          done
-
-          echo "::error::Failed to push alerted_today.json after 5 attempts"
-          exit 1
-
-      - name: Upload scan log (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: scan-log-${{ github.run_id }}
-          path: '*.log'
-          retention-days: 7
