@@ -82,15 +82,31 @@ SIG_VOL = "Volume Surge"
 # =============================================================================
 # TICKER UNIVERSE
 # =============================================================================
+def _detect_delimiter(sample_line):
+    """The source file has switched between comma- and tab-separated at
+    least once already, so don't hardcode either -- sniff the first
+    non-blank line each run. Defaults to comma if neither is present."""
+    if "\t" in sample_line:
+        return "\t"
+    if "," in sample_line:
+        return ","
+    return ","
+
+
 def load_tickers():
-    """Reads Bursa_Malaysia.csv (no header row: code,name) -> list of
+    """Reads Bursa_Malaysia.csv (no header row: code<sep>name) -> list of
     {"code": "1015.KL", "name": "AMBANK"}. The name column in this file
     carries a stray ".KL" suffix (e.g. "AMBANK.KL") which is stripped here
-    so alerts show the plain company name."""
+    so alerts show the plain company name. Delimiter (comma or tab) is
+    auto-detected -- see _detect_delimiter()."""
     filename = os.path.basename(STOCKS_FILE)
     try:
         with open(STOCKS_FILE, "r", encoding="utf-8", newline="") as f:
-            reader = csv.reader(f)
+            raw_lines = f.readlines()
+        first_nonblank = next((ln for ln in raw_lines if ln.strip()), "")
+        delimiter = _detect_delimiter(first_nonblank)
+        with open(STOCKS_FILE, "r", encoding="utf-8", newline="") as f:
+            reader = csv.reader(f, delimiter=delimiter)
             data = []
             skipped = 0
             for row_num, row in enumerate(reader, start=1):
