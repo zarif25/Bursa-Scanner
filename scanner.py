@@ -546,7 +546,8 @@ def main():
         return
 
     results = []
-    stats = {"no_data": 0, "prefilter": 0, "no_signal": 0, "error": 0}
+    stats = {"no_data": 0, "stale": 0, "prefilter": 0, "no_signal": 0, "error": 0}
+    today = get_today_str()
 
     for stock in stocks_to_scan:
         ticker, name = stock["code"], stock.get("name", stock["code"])
@@ -555,6 +556,17 @@ def main():
             if df.empty:
                 stats["no_data"] += 1
                 logging.info(f"📊 {name} ({ticker}): no data, skip.")
+                continue
+
+            # If the fresh fetch failed for this ticker (rate limit, transient
+            # error, or Yahoo hasn't posted today's bar yet), df's latest row
+            # is still yesterday's. Evaluating it as if it were "today" would
+            # silently re-run yesterday's already-seen numbers -- skip instead
+            # and let a later run (this ticker will very likely succeed next
+            # time) pick it up with genuinely fresh data.
+            if df.index.max().strftime("%Y-%m-%d") != today:
+                stats["stale"] += 1
+                logging.info(f"🕒 {name} ({ticker}): no fresh bar for today yet, skip this run.")
                 continue
 
             ok, reason = passes_prefilter(df, name, ticker)
@@ -581,7 +593,7 @@ def main():
             logging.error(f"❌ {name} ({ticker}): {e}")
 
     logging.info(
-        f"Scan done. {len(results)} hit(s) | no_data={stats['no_data']} "
+        f"Scan done. {len(results)} hit(s) | no_data={stats['no_data']} stale={stats['stale']} "
         f"prefilter={stats['prefilter']} no_signal={stats['no_signal']} error={stats['error']}"
     )
 
