@@ -8,28 +8,28 @@ Scans all Bursa Malaysia stocks **once daily at 8:00 AM MYT** (End-Of-Day, pre-m
 
 | Signal | Condition |
 |---|---|
-| 📗 Bullish Zone | Price > EMA20 > EMA50 > EMA200 |
-| 🔥 Pending Breakout | Price within 7% of the 52-week high (but not yet at it) |
+| 🚀 52-Week High (52WH) | Price at or near 52-week high |
+| 📈 2-Year High (2YH) | Price at or near 2-year high |
+| ⚡ Volume Surge | Volume >= 1.5x 20-day average volume |
 
-## Rules (must pass before either signal can fire)
+## Rules (must pass before any signal can fire)
 
 - Price closed **above** yesterday's / the previous daily close
 - Volume **above 500,000** shares
-- Price between RM0.205 and RM7.05 (unchanged from the original scanner)
+- Price between RM0.205 and RM7.05
 
 ## Telegram output
 
-All matching stocks for the day are sent as **one consolidated table** (not one message per stock), with columns **Code, Syarikat, Harga, Trigger**:
+All matching stocks for the day are sent as a consolidated list with stock name, code, price, and triggered signals:
 
-```
-📊 EOD Bursa Scanner — 2026-09-02
+```html
+<b>📊 EOD Bursa Scanner — 2026-09-04</b>
 
-Code    Syarikat        Harga   Trigger
-----------------------------------------
-1155.KL MAYBANK         9.850   Bullish Zone
-5183.KL PCHEM           7.201   Pending Breakout
-7113.KL TOPGLOVE CORPO… 1.234   Bullish Zone, Pending Breakout
+MAYBANK (1155): RM 9.85 🚀 52-Week High (52WH)
+PCHEM (5183): RM 7.20 ⚡ Volume Surge
+TOPGLOVE (7113): RM 1.23 🔥 52-Week High (52WH) | 2-Year High (2YH)
 ```
+
 
 If the day's matches don't fit in one Telegram message (4096-character limit), the table is split across multiple messages, each a complete, independently-readable table. If no stock matches that day, no Telegram message is sent.
 
@@ -37,7 +37,7 @@ If the day's matches don't fit in one Telegram message (4096-character limit), t
 
 | Item | Value |
 |---|---|
-| Scan time | 8:00 AM MYT (00:00 UTC), once daily |
+| Scan time | 8:00 AM GMT+8 / MYT (00:05 UTC), once daily |
 | Days | Monday–Friday |
 | Skipped | Saturday, Sunday, Malaysian public holidays |
 
@@ -45,8 +45,9 @@ Cron (`.github/workflows/scanner.yml`):
 
 ```yaml
 schedule:
-  - cron: '0 0 * * 1-5'   # 8:00 AM MYT, Mon-Fri
+  - cron: '5 0 * * 1-5'   # 8:05 AM GMT+8 (00:05 UTC), Mon-Fri
 ```
+
 
 The weekend/public-holiday skip is enforced twice — once by the cron (`1-5` = Mon–Fri) and again inside `scanner.py`'s `should_run()`, which also checks the `holidays` Malaysia calendar.
 

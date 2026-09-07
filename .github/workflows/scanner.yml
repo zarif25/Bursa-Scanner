@@ -15,11 +15,11 @@ on:
         type: boolean
         default: true
   schedule:
-    # Scheduled time in UTC (Malaysia Time is UTC+8)
-    # 8:00 AM MYT -> 00:00 UTC, Monday-Friday only.
-    # (Weekends and Malaysian public holidays are additionally skipped by
-    # should_run() inside scanner.py, so this schedule is a safe superset.)
-    - cron: '0 0 * * 1-5'
+    # 8:00 AM GMT+8 (UTC+8 / Malaysia Time) = 00:00 UTC
+    # Set to 00:05 UTC (8:05 AM GMT+8, Mon-Fri) with a 5-minute buffer to avoid top-of-hour GitHub Actions congestion
+    - cron: '5 0 * * 1-5'
+
+
 
 concurrency:
   group: eod-bursa-scanner
