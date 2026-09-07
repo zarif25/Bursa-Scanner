@@ -31,8 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(me
 #    c. Price Range       : MIN_PRICE <= Close <= MAX_PRICE
 #    d. Minimum Volume    : Volume > MIN_VOLUME
 #    e. Positive candle: Close > yesterday's Open
-if close <= prev_open:
-    return False, f"close {close:.3f} not above yesterday's open {prev_open:.3f}"
+
 # 2. TECHNICAL SIGNALS (any one triggers an alert)
 #    - Price Up            : Close >= (1 + PRICE_UP_PCT) x Close from 2 days ago
 #    - Golden Cross (GC)   : MA50 crosses above MA200 (today MA50 > MA200,
