@@ -54,19 +54,21 @@ jobs:
           FORCE_RUN: ${{ github.event.inputs.force || 'false' }}
         run: python scanner.py
 
-      # alerted_today.json must persist between runs for the
-      # "Not Alerted Today" pre-filter to work. Runners are ephemeral,
-      # so commit it back to the repo.
-      - name: Persist alerted_today.json
+      # alerted_today.json (dedup) and history_cache.csv/cache_meta.json
+      # (once-daily baseline cache) must persist between runs -- runners are
+      # ephemeral, so commit them back to the repo. history_cache.csv only
+      # actually changes on the first run of each calendar day; other runs
+      # only touch alerted_today.json, so most commits here are small.
+      - name: Persist scanner state (dedup + history cache)
         if: always()
         run: |
           git config user.name "bursa-scanner-bot"
           git config user.email "actions@github.com"
-          git add alerted_today.json || true
+          git add alerted_today.json history_cache.csv cache_meta.json || true
           if ! git diff --cached --quiet; then
-            git commit -m "chore: update alerted_today.json [skip ci]"
+            git commit -m "chore: update scanner state (dedup / baseline cache) [skip ci]"
             git pull --rebase origin ${{ github.ref_name }} || true
             git push
           else
-            echo "No dedup changes to commit."
+            echo "No state changes to commit."
           fi
