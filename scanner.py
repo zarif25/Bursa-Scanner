@@ -16,35 +16,72 @@ import requests
 import holidays
 import html
 
-
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(message)s")
 
-# --- CONFIGURATION ---
-# EOD Bursa Scanner: runs once daily at 8:00 AM MYT (pre-market), scanning
-# the previous trading day's End-Of-Day data. Only two signals are checked:
-#   1. Bullish Zone   -> Price > EMA20 > EMA50 > EMA200
-#   2. Pending Breakout -> price approaching (but not yet at) its 52-week high
-# Both signals additionally require: close above previous daily close, and
-# volume above 500,000 shares.
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+# Intraday Bursa Scanner — runs every 30 minutes during Bursa trading hours
+# (MYT), skipping the lunch break. Schedule is controlled by the GitHub
+# Actions cron in scanner.yml; should_run() guards the trading window here.
+#
+# 1. PRE-FILTER (all 5 must pass before any indicator is checked)
+#    a. Not Alerted Today : code not already in alerted_today.json
+#    b. History Depth     : >= MIN_HISTORY_DAYS trading days of data
+#    c. Price Range       : MIN_PRICE <= Close <= MAX_PRICE
+#    d. Minimum Volume    : Volume > MIN_VOLUME
+#    e. Positive candle: Close > yesterday's Open
+if close <= prev_open:
+    return False, f"close {close:.3f} not above yesterday's open {prev_open:.3f}"
+# 2. TECHNICAL SIGNALS (any one triggers an alert)
+#    - Price Up            : Close >= (1 + PRICE_UP_PCT) x Close from 2 days ago
+#    - Golden Cross (GC)   : MA50 crosses above MA200 (today MA50 > MA200,
+#                            yesterday MA50 <= MA200)
+#    - 52-Week High (52WH) : Close >= 99.5% of 52-week High
+#    - 2-Year High (2YH)   : Close >= 99.5% of 2-year High
+#    - Volume Surge        : Volume >= VOLUME_SURGE_MULT x 20-day avg Volume
+# =============================================================================
+
 MIN_PRICE = 0.205
 MAX_PRICE = 7.05
-MIN_VOLUME = 500_000
-VOLUME_SURGE_MULT = 1.5
+MIN_VOLUME = 50_000
+MIN_HISTORY_DAYS = 250
 
+PRICE_UP_PCT = 0.07          # 7% vs close 2 days ago
+HIGH_PROXIMITY = 0.995       # within 0.5% of 52WH / 2YH
+VOLUME_SURGE_MULT = 2.0      # 2x 20-day average volume
+MA_FAST = 50
+MA_SLOW = 200
 
-
+# Bursa trading window (MYT). Lunch break 12:30-14:30; the 12:45 run is
+# allowed so the morning-session close is captured.
+MYT = timezone(timedelta(hours=8))
+MARKET_OPEN = time(9, 0)
+MARKET_CLOSE = time(17, 30)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STOCKS_FILE = os.path.join(BASE_DIR, "stocks.json")
 DEDUP_FILE = os.path.join(BASE_DIR, "alerted_today.json")
 
+TELEGRAM_MAX_CHARS = 4096
+
+SIG_PRICE_UP = "Price Up"
+SIG_GC = "Golden Cross (GC)"
+SIG_52WH = "52-Week High (52WH)"
+SIG_2YH = "2-Year High (2YH)"
+SIG_VOL = "Volume Surge"
+
+
+# =============================================================================
+# TICKER UNIVERSE
+# =============================================================================
 def load_tickers():
-    """Reads stocks.json and extracts the ticker codes and names."""
+    """Reads stocks.json -> list of {"code": "1015.KL", "name": "AMBANK"}."""
     try:
         with open(STOCKS_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-            logging.info(f"✅ Successfully loaded {len(data)} tickers from stocks.json")
-            return data
+        logging.info(f"✅ Loaded {len(data)} tickers from stocks.json")
+        return data
     except FileNotFoundError:
         logging.error(f"❌ {STOCKS_FILE} not found!")
         return []
@@ -52,233 +89,272 @@ def load_tickers():
         logging.error(f"❌ Error reading stocks.json: {e}")
         return []
 
+
 STOCKS = load_tickers()
 
+
 def get_bursa_tickers():
-    """Returns a list of ticker codes for test_setup.py compatibility."""
-    return [stock.get("code") for stock in STOCKS if stock.get("code")]
-
-def analyze(ticker):
-    """Runs signal analysis for a single ticker for test_setup.py compatibility."""
-    try:
-        df = get_history(ticker)
-        if df.empty:
-            return None
-        signals = compute_signals(df)
-        if signals:
-            return {"signals": signals}
-    except Exception as e:
-        logging.error(f"Error analyzing {ticker}: {e}")
-    return None
-
-# Match the names in your scanner.yml file
-TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("CHAT_ID")
+    """Ticker codes only (kept for test_setup.py compatibility)."""
+    return [s.get("code") for s in STOCKS if s.get("code")]
 
 
-# Instantiate Malaysian holidays across past, current, and upcoming year
+# =============================================================================
+# SCHEDULE / HOLIDAY GUARD
+# =============================================================================
 _cur_year = datetime.now().year
 MY_HOLIDAYS = holidays.MY(years=[_cur_year - 1, _cur_year, _cur_year + 1])
 
-def should_run():
-    """Check if it's a weekday and not a Malaysian public holiday.
 
-    This EOD scanner fires once daily at 8:00 AM MYT (before market open),
-    so there is no intraday trading-hours window to check here — the
-    GitHub Actions cron schedule is what controls the time of day.
-    """
-    import sys
+def should_run(now=None):
+    """Weekday, not a Malaysian public holiday, and inside trading hours."""
     if os.getenv("FORCE_RUN") == "true" or "--force" in sys.argv:
         logging.info("💪 Force run enabled. Bypassing schedule/holiday checks.")
         return True
 
-    now = datetime.now(timezone(timedelta(hours=8)))
+    now = now or datetime.now(MYT)
 
-    # Check if weekend (Saturday=5, Sunday=6)
     if now.weekday() >= 5:
-        logging.info("📆 Today is a weekend. Skipping scan.")
+        logging.info("📆 Weekend. Skipping scan.")
         return False
-
-    # Check if public holiday in Malaysia
     if now.date() in MY_HOLIDAYS:
-        logging.info("🎉 Today is a Malaysian Public Holiday. Skipping scan.")
+        logging.info(f"🎉 Malaysian public holiday ({MY_HOLIDAYS.get(now.date())}). Skipping scan.")
         return False
-
+    if not (MARKET_OPEN <= now.time() <= MARKET_CLOSE):
+        logging.info(f"⏰ {now.strftime('%H:%M')} MYT is outside trading hours. Skipping scan.")
+        return False
     return True
 
-# --- DEDUP LOGIC ---
+
+# =============================================================================
+# DEDUP (one alert per stock per day)
+# =============================================================================
 def get_today_str():
-    # Get today's date in Malaysia Time
-    return datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
+    return datetime.now(MYT).strftime("%Y-%m-%d")
 
 
 def load_alerted_today():
-    """Loads the list of already alerted stocks for today."""
     today = get_today_str()
     try:
         with open(DEDUP_FILE, "r") as f:
             data = json.load(f)
-            # If the file is from a previous day, reset the list
-            if data.get("date") == today:
-                return set(data.get("alerted", []))
+        if data.get("date") == today:
+            return set(data.get("alerted", []))
     except (FileNotFoundError, json.JSONDecodeError):
         pass
     return set()
 
+
 def save_alerted_today(alerted_set):
-    """Saves the updated list back to the JSON file."""
-    today = get_today_str()
-    data = {
-        "date": today,
-        "alerted": list(alerted_set)
-    }
     with open(DEDUP_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+        json.dump({"date": get_today_str(), "alerted": sorted(alerted_set)}, f, indent=4)
+
+
+# =============================================================================
+# DATA
+# =============================================================================
+def normalise_df(df):
+    """Flatten MultiIndex columns, capitalise names, drop rows without Close/Volume."""
+    if df is None or df.empty:
+        return pd.DataFrame()
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+    df = df.copy()
+    df.columns = [str(c).capitalize() for c in df.columns]
+    return df.dropna(subset=["Close", "Volume"])
+
 
 def get_history(ticker):
-    df = yf.download(
-        ticker,
+    df = yf.download(ticker, period="2y", interval="1d", progress=False, auto_adjust=False)
+    return normalise_df(df)
+
+
+def bulk_download(tickers):
+    return yf.download(
+        tickers,
         period="2y",
         interval="1d",
         progress=False,
-        auto_adjust=False
+        group_by="ticker",
+        auto_adjust=False,
+        threads=True,
     )
-    if df is None or df.empty:
-        return pd.DataFrame()
-    
-    # Fix for newer yfinance versions returning MultiIndex columns
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-        
-    df = df.dropna().copy()
-    df.columns = [str(c).capitalize() for c in df.columns]
-    return df
 
-def compute_signals(df):
-    """Bursa Malaysia Scanner signal engine (Bursa-Scanner).
 
-    Triggers:
-      - 52-Week High (52WH) : Price at or near 52-week high
-      - 2-Year High (2YH)   : Price at or near 2-year high
-      - Volume Surge        : Volume >= 1.5x 20-day average volume
+def extract_ticker_df(df_all, ticker):
+    if isinstance(df_all.columns, pd.MultiIndex):
+        if ticker not in df_all.columns.get_level_values(0):
+            return pd.DataFrame()
+        return normalise_df(df_all[ticker])
+    return normalise_df(df_all)
 
-    Rule: today's close must be above the previous trading day's close.
-    """
-    if len(df) < 250:
-        return []
 
-    df = df.copy()
-    df["Vol20"] = df["Volume"].rolling(window=20).mean()
+# =============================================================================
+# PRE-FILTER
+# =============================================================================
+def passes_prefilter(df, name, ticker):
+    """Returns (ok, reason). Conditions b–e; condition a (dedup) is applied in main()."""
+    # b. History depth
+    if len(df) < MIN_HISTORY_DAYS:
+        return False, f"only {len(df)} days of history (< {MIN_HISTORY_DAYS})"
 
     latest = df.iloc[-1]
     prev = df.iloc[-2]
-    current_price = float(latest["Close"])
-    prev_close = float(prev["Close"])
+    close = float(latest["Close"])
+    volume = float(latest["Volume"])
+    prev_open = float(prev["Open"])
 
-    # Rule: price must close above yesterday's / previous daily close
-    if current_price <= prev_close:
+    # c. Price range
+    if not (MIN_PRICE <= close <= MAX_PRICE):
+        return False, f"price {close:.3f} out of range ({MIN_PRICE}–{MAX_PRICE})"
+
+    # d. Minimum volume (strictly greater than)
+    if volume <= MIN_VOLUME:
+        return False, f"volume {volume:,.0f} <= {MIN_VOLUME:,.0f}"
+
+    # e. Positive candle: Close > yesterday's Open
+    if close <= prev_open:
+        return False, f"close {close:.3f} not above yesterday's open {prev_open:.3f}"
+
+    return True, ""
+
+
+# =============================================================================
+# SIGNAL ENGINE
+# =============================================================================
+def compute_signals(df):
+    """Returns list of triggered signal names. Assumes df already passed pre-filter."""
+    if len(df) < MIN_HISTORY_DAYS:
         return []
 
+    df = df.copy()
+    df["MA50"] = df["Close"].rolling(MA_FAST).mean()
+    df["MA200"] = df["Close"].rolling(MA_SLOW).mean()
+    # 20-day average volume EXCLUDING today's bar, so today's spike does not
+    # dilute its own benchmark (with today included, a 2x day only reads ~1.9x).
+    df["Vol20"] = df["Volume"].shift(1).rolling(20).mean()
+
+    latest = df.iloc[-1]
+    prev = df.iloc[-2]
+    close = float(latest["Close"])
     signals = []
 
+    # Price Up: >= 7% above close 2 days ago
+    if len(df) >= 3:
+        close_2d_ago = float(df.iloc[-3]["Close"])
+        if close_2d_ago > 0 and close >= close_2d_ago * (1 + PRICE_UP_PCT):
+            signals.append(SIG_PRICE_UP)
+
+    # Golden Cross: MA50 crosses above MA200 today
+    if not pd.isna(latest["MA50"]) and not pd.isna(latest["MA200"]) \
+            and not pd.isna(prev["MA50"]) and not pd.isna(prev["MA200"]):
+        if float(latest["MA50"]) > float(latest["MA200"]) and float(prev["MA50"]) <= float(prev["MA200"]):
+            signals.append(SIG_GC)
+
+    # 52-Week High
     high_52w = float(df.tail(252)["High"].max())
-    if high_52w > 0 and current_price >= high_52w * 0.995:
-        signals.append("52-Week High (52WH)")
+    if high_52w > 0 and close >= high_52w * HIGH_PROXIMITY:
+        signals.append(SIG_52WH)
 
-    all_time_high = float(df["High"].max())
-    if all_time_high > 0 and current_price >= all_time_high * 0.995:
-        signals.append("2-Year High (2YH)")
+    # 2-Year High (full 2y download window)
+    high_2y = float(df["High"].max())
+    if high_2y > 0 and close >= high_2y * HIGH_PROXIMITY:
+        signals.append(SIG_2YH)
 
-    # Volume Surge (volume >= 1.5x 20-day average)
-    if not pd.isna(latest["Vol20"]) and float(latest["Vol20"]) > 0 and float(latest["Volume"]) >= float(latest["Vol20"]) * VOLUME_SURGE_MULT:
-        signals.append("Volume Surge")
+    # Volume Surge: >= 2x 20-day average
+    vol20 = latest["Vol20"]
+    if not pd.isna(vol20) and float(vol20) > 0 and float(latest["Volume"]) >= float(vol20) * VOLUME_SURGE_MULT:
+        signals.append(SIG_VOL)
 
     return signals
 
 
+def analyze(ticker):
+    """Single-ticker analysis (kept for test_setup.py compatibility)."""
+    try:
+        df = get_history(ticker)
+        ok, _ = passes_prefilter(df, ticker, ticker)
+        if not ok:
+            return None
+        signals = compute_signals(df)
+        return {"signals": signals} if signals else None
+    except Exception as e:
+        logging.error(f"Error analyzing {ticker}: {e}")
+        return None
 
 
+# =============================================================================
+# TELEGRAM
+# =============================================================================
 def send_telegram(message):
     token = (os.getenv("BOT_TOKEN") or "").strip().strip('"').strip("'")
     chat_id = (os.getenv("CHAT_ID") or "").strip().strip('"').strip("'")
-
     if not token or not chat_id:
-        logging.warning("⚠️ Telegram credentials missing in GitHub Secrets.")
+        logging.warning("⚠️ Telegram credentials missing (BOT_TOKEN / CHAT_ID).")
         return False
 
     def _post(target_chat_id):
         url = f"https://api.telegram.org/bot{token}/sendMessage"
-        payload = {
-            "chat_id": target_chat_id,
-            "text": message,
-            "parse_mode": "HTML"
-        }
+        payload = {"chat_id": target_chat_id, "text": message, "parse_mode": "HTML"}
         return requests.post(url, data=payload, timeout=20)
 
     try:
         r = _post(chat_id)
-        if not r.ok:
-            resp_text = r.text
-            resp_json = r.json() if r.content else {}
-            desc = resp_json.get("description", "")
-            
-            # Retry with - prefix if chat_id missing minus sign for channel/group
-            if "chat not found" in desc.lower() and not chat_id.startswith("-"):
-                fallbacks = [f"-{chat_id}"]
-                if not chat_id.startswith("100"):
-                    fallbacks.append(f"-100{chat_id}")
-                for fb in fallbacks:
-                    logging.info(f"🔄 Retrying with fallback chat_id: '{fb}'...")
-                    r_fb = _post(fb)
-                    if r_fb.ok:
-                        logging.info(f"✅ Succeeded using fallback chat_id: '{fb}'!")
-                        return True
+        if r.ok:
+            return True
 
-            if r.status_code == 429:
-                try:
-                    retry_after = int(resp_json.get("parameters", {}).get("retry_after", 30))
-                except Exception:
-                    retry_after = 30
-                logging.warning(f"⚠️ Telegram rate limit hit (429). Retrying after {retry_after} seconds...")
-                time_module.sleep(retry_after)
-                r_retry = _post(chat_id)
-                if r_retry.ok:
+        resp_json = r.json() if r.content else {}
+        desc = str(resp_json.get("description", ""))
+
+        if "chat not found" in desc.lower() and not chat_id.startswith("-"):
+            fallbacks = [f"-{chat_id}"]
+            if not chat_id.startswith("100"):
+                fallbacks.append(f"-100{chat_id}")
+            for fb in fallbacks:
+                logging.info(f"🔄 Retrying with fallback chat_id: '{fb}'...")
+                if _post(fb).ok:
+                    logging.info(f"✅ Succeeded using fallback chat_id: '{fb}'")
                     return True
-                logging.error(f"❌ Telegram API retry failed: {r_retry.text}")
-                return False
 
-            logging.error(f"❌ Telegram HTTP Error: {resp_text}")
-            if "chat not found" in desc.lower():
-                logging.error(
-                    "💡 'chat not found' troubleshooting steps:\n"
-                    "   1. Make sure your Telegram bot has been ADDED TO YOUR CHANNEL/GROUP and promoted to ADMIN.\n"
-                    "   2. Check CHAT_ID in GitHub Secrets:\n"
-                    "      - Channels start with -100 (e.g., -1001234567890).\n"
-                    "      - Groups start with - (e.g., -987654321).\n"
-                    "      - Personal chats require sending /start to your bot in Telegram first.\n"
-                    "   3. Verify chat ID using @getmyid_bot in Telegram."
-                )
+        if r.status_code == 429:
+            try:
+                retry_after = int(resp_json.get("parameters", {}).get("retry_after", 30))
+            except Exception:
+                retry_after = 30
+            logging.warning(f"⚠️ Telegram rate limit (429). Retrying after {retry_after}s...")
+            time_module.sleep(retry_after)
+            r_retry = _post(chat_id)
+            if r_retry.ok:
+                return True
+            logging.error(f"❌ Telegram retry failed: {r_retry.text}")
             return False
 
-        return True
+        logging.error(f"❌ Telegram HTTP Error: {r.text}")
+        if "chat not found" in desc.lower():
+            logging.error(
+                "💡 'chat not found' checklist:\n"
+                "   1. Bot must be added to the channel/group and promoted to ADMIN.\n"
+                "   2. CHAT_ID format: channels -100xxxxxxxxxx, groups -xxxxxxxxx,\n"
+                "      personal chat requires /start to the bot first.\n"
+                "   3. Verify with @getmyid_bot."
+            )
+        return False
     except Exception as e:
-        logging.error(f"❌ Telegram connection/request failed: {e}")
+        logging.error(f"❌ Telegram request failed: {e}")
         return False
 
-TELEGRAM_MAX_CHARS = 4096
 
-def format_results_table(results):
-    """Builds the EOD scan result in clean list-style format:
-    
-    AMBANK (1015): RM 6.88 🚀 Pending Breakout
-    ABMB (2488): RM 4.98 🟢 Bullish Zone
-    SAMAIDEN (0223): RM 1.76 🔥 Bullish Zone | Pending Breakout
+def format_results(results, run_time=None):
+    """List-style alert, split into <=4096-char chunks.
+
+    📊 Bursa Scanner — 2026-09-07 10:45 MYT
+    AMBANK (1015): RM 6.88 🔥 Price Up | 52-Week High (52WH)
+    ABMB (2488): RM 4.98 🚀 52-Week High (52WH)
     """
     if not results:
         return []
 
-    today = get_today_str()
-    header = f"<b>📊 EOD Bursa Scanner — {today}</b>\n\n"
+    run_time = run_time or datetime.now(MYT)
+    header = f"<b>📊 Bursa Scanner — {run_time.strftime('%Y-%m-%d %H:%M')} MYT</b>\n\n"
 
     entries = []
     for r in results:
@@ -286,208 +362,136 @@ def format_results_table(results):
         name = html.escape(r["name"])
         price = r["price"]
         price_str = f"{price:.2f}" if abs(price - round(price, 2)) < 1e-5 else f"{price:.3f}"
-        
-        has_52wh = "52-Week High (52WH)" in r["signals"]
-        has_2yh = "2-Year High (2YH)" in r["signals"]
-        has_vol = "Volume Surge" in r["signals"]
-        
-        if len(r["signals"]) > 1:
+        sigs = r["signals"]
+
+        if len(sigs) > 1:
             emoji = "🔥"
-        elif has_52wh:
+        elif SIG_GC in sigs:
+            emoji = "✨"
+        elif SIG_52WH in sigs or SIG_2YH in sigs:
             emoji = "🚀"
-        elif has_2yh:
+        elif SIG_PRICE_UP in sigs:
             emoji = "📈"
-        elif has_vol:
+        elif SIG_VOL in sigs:
             emoji = "⚡"
         else:
             emoji = "🟢"
-            
-        trigger_text = " | ".join(r["signals"]) if r["signals"] else "Volume & Price Gain"
-        entry = f"{name} ({code}): RM {price_str} {emoji} {trigger_text}"
-        entries.append(entry)
 
-    messages = []
-    current_chunk = []
-    current_len = len(header)
+        entries.append(f"{name} ({code}): RM {price_str} {emoji} {' | '.join(sigs)}")
 
+    messages, chunk, cur_len = [], [], len(header)
     for entry in entries:
         entry_len = len(entry) + 2
-        if current_chunk and (current_len + entry_len > TELEGRAM_MAX_CHARS - 50):
-            messages.append(header + "\n\n".join(current_chunk))
-            current_chunk = [entry]
-            current_len = len(header) + entry_len
+        if chunk and cur_len + entry_len > TELEGRAM_MAX_CHARS - 50:
+            messages.append(header + "\n\n".join(chunk))
+            chunk, cur_len = [entry], len(header) + entry_len
         else:
-            current_chunk.append(entry)
-            current_len += entry_len
-
-    if current_chunk:
-        messages.append(header + "\n\n".join(current_chunk))
-
+            chunk.append(entry)
+            cur_len += entry_len
+    if chunk:
+        messages.append(header + "\n\n".join(chunk))
     return messages
 
-def scan_ticker(ticker, name, alerted_set=None):
-    try:
-        df = get_history(ticker)
-        if df.empty:
-            logging.info(f"📊 {name} ({ticker}): No data found, skip.")
-            return None
 
-        # --- PRE-CONDITIONS ---
-        # 1. Price Range check
-        current_price = float(df.iloc[-1]["Close"])
-        if not (MIN_PRICE <= current_price <= MAX_PRICE):
-            logging.info(f"💰 {name} ({ticker}): Price {current_price:.3f} out of range ({MIN_PRICE} - {MAX_PRICE}), skip.")
-            return None
-
-        # 2. Volume filter (must be above MIN_VOLUME)
-        current_volume = float(df.iloc[-1]["Volume"])
-        if current_volume <= MIN_VOLUME:
-            logging.info(f"📊 {name} ({ticker}): Volume {current_volume:,.0f} <= {MIN_VOLUME:,.0f}, skip.")
-            return None
-
-        signals = compute_signals(df)
-        if not signals:
-            logging.info(f"🚫 {name} ({ticker}): No signal triggered.")
-            return None
-
-        return {
-            "ticker": ticker,
-            "name": name,
-            "price": current_price,
-            "signals": signals
-        }
-        
-    except Exception as e:
-        logging.error(f"❌ {name} ({ticker}): Error occurred - {e}")
-        return None
-
+# =============================================================================
+# MAIN
+# =============================================================================
 def main():
-    logging.info("🤖 Starting EOD Bursa Scanner...")
-    
-    # Check if we should run today
-    if not should_run():
-        logging.info("⏹️ Script finished early due to weekend, holiday, or outside trading hours.")
-        return
+    logging.info("🤖 Starting Bursa Scanner...")
 
+    if not should_run():
+        logging.info("⏹️ Skipped (weekend / holiday / outside trading hours).")
+        return
     if not STOCKS:
         logging.error("❌ No stocks loaded. Exiting.")
         return
 
-    # Load today's already alerted stocks
+    # Pre-filter (a): not alerted today
     alerted_set = load_alerted_today()
-    logging.info(f"📋 {len(alerted_set)} stocks have already been alerted today.")
+    logging.info(f"📋 {len(alerted_set)} stock(s) already alerted today.")
 
-    stocks_to_scan = []
-    for stock in STOCKS:
-        ticker = stock.get("code")
-        name = stock.get("name", ticker)
-        if ticker in alerted_set:
-            logging.info(f"⏳ {name} ({ticker}): Already alerted today, skip.")
-        elif ticker:
-            stocks_to_scan.append(stock)
-
+    stocks_to_scan = [s for s in STOCKS if s.get("code") and s["code"] not in alerted_set]
+    skipped = len(STOCKS) - len(stocks_to_scan)
+    if skipped:
+        logging.info(f"⏳ {skipped} stock(s) skipped — already alerted today.")
     if not stocks_to_scan:
-        logging.info("📋 All stocks have already been alerted today. Nothing to scan.")
+        logging.info("📋 Nothing left to scan today.")
         return
 
-    tickers_to_download = [s.get("code") for s in stocks_to_scan]
-    logging.info(f"Downloading data for {len(tickers_to_download)} stocks in bulk...")
-
+    tickers = [s["code"] for s in stocks_to_scan]
+    logging.info(f"⬇️ Bulk downloading {len(tickers)} tickers (2y daily)...")
     try:
-        df_all = yf.download(
-            tickers_to_download,
-            period="2y",
-            interval="1d",
-            progress=False,
-            group_by="ticker",
-            auto_adjust=False
-        )
+        df_all = bulk_download(tickers)
     except Exception as e:
-        logging.error(f"❌ Failed to bulk download tickers: {e}")
+        logging.error(f"❌ Bulk download failed: {e}")
         return
 
     results = []
-    logging.info("Analyzing stock data...")
+    stats = {"no_data": 0, "prefilter": 0, "no_signal": 0, "error": 0}
 
     for stock in stocks_to_scan:
-        ticker = stock.get("code")
-        name = stock.get("name", ticker)
-        
+        ticker, name = stock["code"], stock.get("name", stock["code"])
         try:
-            # Check if ticker is present in downloaded columns
-            if isinstance(df_all.columns, pd.MultiIndex):
-                if ticker not in df_all.columns:
-                    logging.info(f"📊 {name} ({ticker}): No data found in bulk download, skip.")
-                    continue
-                df = df_all[ticker].dropna(subset=["Close", "Volume"]).copy()
-            else:
-                df = df_all.dropna(subset=["Close", "Volume"]).copy()
-
+            df = extract_ticker_df(df_all, ticker)
             if df.empty:
-                logging.info(f"📊 {name} ({ticker}): Data is empty after dropna, skip.")
+                stats["no_data"] += 1
+                logging.info(f"📊 {name} ({ticker}): no data, skip.")
                 continue
 
-            # Standardize columns to match compute_signals expectations
-            df.columns = [str(c).capitalize() for c in df.columns]
-
-            # --- PRE-CONDITIONS ---
-            # 1. Price Range check
-            current_price = float(df.iloc[-1]["Close"])
-            if not (MIN_PRICE <= current_price <= MAX_PRICE):
-                logging.info(f"💰 {name} ({ticker}): Price {current_price:.3f} out of range ({MIN_PRICE} - {MAX_PRICE}), skip.")
-                continue
-
-            # 2. Volume filter (must be above MIN_VOLUME)
-            current_volume = float(df.iloc[-1]["Volume"])
-            if current_volume <= MIN_VOLUME:
-                logging.info(f"📊 {name} ({ticker}): Volume {current_volume:,.0f} <= {MIN_VOLUME:,.0f}, skip.")
+            ok, reason = passes_prefilter(df, name, ticker)
+            if not ok:
+                stats["prefilter"] += 1
+                logging.info(f"🚧 {name} ({ticker}): pre-filter failed — {reason}")
                 continue
 
             signals = compute_signals(df)
             if not signals:
-                logging.info(f"🚫 {name} ({ticker}): No signal triggered.")
+                stats["no_signal"] += 1
+                logging.info(f"🚫 {name} ({ticker}): no signal.")
                 continue
 
             results.append({
                 "ticker": ticker,
                 "name": name,
-                "price": current_price,
-                "signals": signals
+                "price": float(df.iloc[-1]["Close"]),
+                "signals": signals,
             })
-
+            logging.info(f"✅ {name} ({ticker}): {' | '.join(signals)}")
         except Exception as e:
-            logging.error(f"❌ {name} ({ticker}): Error occurred during scan - {e}")
+            stats["error"] += 1
+            logging.error(f"❌ {name} ({ticker}): {e}")
 
-    logging.info(f"Scan finished. Found {len(results)} stocks with signals.")
+    logging.info(
+        f"Scan done. {len(results)} hit(s) | no_data={stats['no_data']} "
+        f"prefilter={stats['prefilter']} no_signal={stats['no_signal']} error={stats['error']}"
+    )
 
-    # Send one consolidated table (Code / Syarikat / Harga / Trigger) instead
-    # of one message per stock. Split across multiple messages only if the
-    # table doesn't fit Telegram's 4096-character limit.
     if not results:
-        logging.info("📭 No stocks matched signals today. No Telegram message sent.")
+        logging.info("📭 No signals this run. No Telegram message sent.")
         return
 
     results.sort(key=lambda x: x["ticker"])
-    messages = format_results_table(results)
-    logging.info(f"Sending {len(messages)} Telegram message(s) covering {len(results)} matching stock(s)...")
+    messages = format_results(results)
+    logging.info(f"📨 Sending {len(messages)} message(s) for {len(results)} stock(s)...")
 
     all_sent = True
     for i, msg in enumerate(messages, start=1):
         if send_telegram(msg):
-            logging.info(f"🚀 Sent EOD summary table {i}/{len(messages)} to Telegram.")
+            logging.info(f"🚀 Sent {i}/{len(messages)}.")
         else:
-            logging.error(f"❌ Failed to send EOD summary table {i}/{len(messages)} to Telegram.")
+            logging.error(f"❌ Failed to send {i}/{len(messages)}.")
             all_sent = False
-        # Sleep briefly between messages to respect Telegram rate limits
         time_module.sleep(0.5)
 
     if all_sent:
-        for res in results:
-            alerted_set.add(res["ticker"])
+        alerted_set.update(r["ticker"] for r in results)
         save_alerted_today(alerted_set)
+        logging.info(f"💾 alerted_today.json updated ({len(alerted_set)} total today).")
     else:
-        logging.error("❌ Not all summary messages sent successfully; alerted_today.json left unchanged.")
+        logging.error("❌ Not all messages sent; alerted_today.json left unchanged.")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
+
