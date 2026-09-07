@@ -61,6 +61,13 @@ MARKET_CLOSE = time(17, 30)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STOCKS_FILE = os.path.join(BASE_DIR, "stocks.json")
 DEDUP_FILE = os.path.join(BASE_DIR, "alerted_today.json")
+CACHE_FILE = os.path.join(BASE_DIR, "history_cache.csv")
+CACHE_META_FILE = os.path.join(BASE_DIR, "cache_meta.json")
+
+# Fresh (non-cached) lookback window per run. 5 calendar days safely covers
+# the previous close plus today's bar even across long weekends, without
+# re-downloading the full 2y history every 30 minutes.
+FRESH_LOOKBACK_PERIOD = "5d"
 
 TELEGRAM_MAX_CHARS = 4096
 
@@ -167,10 +174,10 @@ def get_history(ticker):
     return normalise_df(df)
 
 
-def bulk_download(tickers):
+def bulk_download(tickers, period="2y"):
     return yf.download(
         tickers,
-        period="2y",
+        period=period,
         interval="1d",
         progress=False,
         group_by="ticker",
@@ -185,6 +192,100 @@ def extract_ticker_df(df_all, ticker):
             return pd.DataFrame()
         return normalise_df(df_all[ticker])
     return normalise_df(df_all)
+
+
+# =============================================================================
+# HISTORY CACHE
+# =============================================================================
+# The last 2 years of OHLCV data for every ticker is static once a trading
+# day has closed. Re-downloading all of it 15x/day is wasteful, so it is
+# cached to disk and refreshed in full only once per calendar day. Every run
+# still fetches a small FRESH_LOOKBACK_PERIOD window per ticker so today's
+# price/volume is always live -- freshness every 30 minutes is unaffected.
+CACHE_COLUMNS = ["Date", "Ticker", "Open", "High", "Low", "Close", "Volume"]
+
+
+def load_cache_meta():
+    try:
+        with open(CACHE_META_FILE, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def save_cache_meta(baseline_date):
+    with open(CACHE_META_FILE, "w") as f:
+        json.dump({"baseline_date": baseline_date}, f, indent=4)
+
+
+def cache_is_stale():
+    """True if the cached baseline was not refreshed today (or doesn't exist)."""
+    if not os.path.exists(CACHE_FILE):
+        return True
+    return load_cache_meta().get("baseline_date") != get_today_str()
+
+
+def bulk_df_to_long(df_all, tickers):
+    """Flatten a bulk_download() MultiIndex frame into long format:
+    one row per (Date, Ticker). Rows dated today are dropped -- the baseline
+    cache must only ever hold fully-closed trading days."""
+    today = get_today_str()
+    frames = []
+    for ticker in tickers:
+        df = extract_ticker_df(df_all, ticker)
+        if df.empty:
+            continue
+        df = df.reset_index()
+        df = df.rename(columns={df.columns[0]: "Date"})  # index col, whatever its name
+        df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
+        df = df[df["Date"] < today]  # exclude today's (possibly partial) bar
+        if df.empty:
+            continue
+        df["Ticker"] = ticker
+        frames.append(df[CACHE_COLUMNS])
+    if not frames:
+        return pd.DataFrame(columns=CACHE_COLUMNS)
+    return pd.concat(frames, ignore_index=True)
+
+
+def refresh_baseline_cache(tickers):
+    """Full 2y re-download for every ticker in the universe; overwrites the cache.
+    Runs once per calendar day (the first run after midnight MYT)."""
+    logging.info(f"🔄 Refreshing baseline cache for {len(tickers)} tickers (once-daily, full 2y)...")
+    df_all = bulk_download(tickers, period="2y")
+    long_df = bulk_df_to_long(df_all, tickers)
+    long_df.to_csv(CACHE_FILE, index=False)
+    save_cache_meta(get_today_str())
+    logging.info(f"💾 Baseline cache written: {len(long_df)} rows across {long_df['Ticker'].nunique()} tickers.")
+    return long_df
+
+
+def load_baseline_cache():
+    """Returns {ticker: DataFrame(Date-indexed, Open/High/Low/Close/Volume)}."""
+    if not os.path.exists(CACHE_FILE):
+        return {}
+    long_df = pd.read_csv(CACHE_FILE, parse_dates=["Date"])
+    baseline = {}
+    for ticker, g in long_df.groupby("Ticker"):
+        baseline[ticker] = g.set_index("Date").sort_index()[["Open", "High", "Low", "Close", "Volume"]]
+    return baseline
+
+
+def build_full_history(baseline, fresh_df_all, ticker):
+    """Combine the cached static baseline with this run's fresh lookback window
+    for one ticker, returning a single ascending-date DataFrame ready for
+    passes_prefilter()/compute_signals() -- identical shape to a full 2y download."""
+    base = baseline.get(ticker, pd.DataFrame(columns=["Open", "High", "Low", "Close", "Volume"]))
+    fresh = extract_ticker_df(fresh_df_all, ticker)
+    if fresh.empty:
+        return base
+    fresh = fresh.copy()
+    fresh.index = pd.to_datetime(fresh.index)
+    # Fresh data wins on any overlapping date (e.g. cache built before today's
+    # close vs. an intraday partial bar) -- it is always the more current read.
+    combined = pd.concat([base, fresh])
+    combined = combined[~combined.index.duplicated(keep="last")].sort_index()
+    return combined
 
 
 # =============================================================================
@@ -406,6 +507,24 @@ def main():
         logging.error("❌ No stocks loaded. Exiting.")
         return
 
+    # Baseline history cache: full 2y re-download once per calendar day for the
+    # WHOLE universe (not just today's remaining stocks -- tomorrow needs all
+    # of them again). Every other run of the day reuses this on disk.
+    all_tickers = get_bursa_tickers()
+    if cache_is_stale():
+        try:
+            refresh_baseline_cache(all_tickers)
+        except Exception as e:
+            logging.error(f"❌ Baseline cache refresh failed: {e}")
+            if not os.path.exists(CACHE_FILE):
+                logging.error("❌ No usable cache exists. Exiting.")
+                return
+            logging.warning("⚠️ Continuing with yesterday's cached baseline.")
+    else:
+        logging.info("📦 Baseline cache is fresh for today, reusing it.")
+
+    baseline = load_baseline_cache()
+
     # Pre-filter (a): not alerted today
     alerted_set = load_alerted_today()
     logging.info(f"📋 {len(alerted_set)} stock(s) already alerted today.")
@@ -419,11 +538,11 @@ def main():
         return
 
     tickers = [s["code"] for s in stocks_to_scan]
-    logging.info(f"⬇️ Bulk downloading {len(tickers)} tickers (2y daily)...")
+    logging.info(f"⬇️ Fetching fresh {FRESH_LOOKBACK_PERIOD} window for {len(tickers)} tickers...")
     try:
-        df_all = bulk_download(tickers)
+        fresh_df_all = bulk_download(tickers, period=FRESH_LOOKBACK_PERIOD)
     except Exception as e:
-        logging.error(f"❌ Bulk download failed: {e}")
+        logging.error(f"❌ Fresh data download failed: {e}")
         return
 
     results = []
@@ -432,7 +551,7 @@ def main():
     for stock in stocks_to_scan:
         ticker, name = stock["code"], stock.get("name", stock["code"])
         try:
-            df = extract_ticker_df(df_all, ticker)
+            df = build_full_history(baseline, fresh_df_all, ticker)
             if df.empty:
                 stats["no_data"] += 1
                 logging.info(f"📊 {name} ({ticker}): no data, skip.")
