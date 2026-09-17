@@ -56,8 +56,8 @@ MA_SLOW = 200
 # Bursa trading window (MYT). Lunch break 12:30-14:30; the 12:45 run is
 # allowed so the morning-session close is captured.
 MYT = timezone(timedelta(hours=8))
-MARKET_OPEN = time(9, 0)
-MARKET_CLOSE = time(17, 30)
+MARKET_OPEN = time(8, 15)
+MARKET_CLOSE = time(17, 0)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STOCKS_FILE = os.path.join(BASE_DIR, "Bursa_Malaysia.csv")
