@@ -13,6 +13,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 import pandas as pd
 import yfinance as yf
+yf.set_tz_cache_location("custom_yfinance_cache")
 import requests
 import holidays
 import html
