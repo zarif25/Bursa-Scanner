@@ -23,18 +23,27 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(me
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
-# Intraday Bursa Scanner — runs every 30 minutes during Bursa trading hours
-# (MYT), skipping the lunch break. Schedule is controlled by the GitHub
-# Actions cron in scanner.yml; should_run() guards the trading window here.
+# Bursa Scanner — supports two run modes:
 #
-# 1. PRE-FILTER (all 5 must pass before any indicator is checked)
+# 1. INTRADAY MODE (during market hours 08:15–17:00 MYT)
+#    Runs every 30 minutes. Expects today's bar to be present.
+#    Skips any ticker where today's bar is not yet published by Yahoo.
+#
+# 2. EOD MODE (after market close 17:00–20:00 MYT)
+#    Runs once after Bursa closes. Accepts today's completed bar.
+#    Also supports PRE-MARKET runs (before 08:15) using yesterday's bar.
+#
+# Schedule is controlled by the GitHub Actions cron in scanner.yml.
+# should_run() guards the trading/EOD window here.
+#
+# PRE-FILTER (all 5 must pass before any indicator is checked)
 #    a. Not Alerted Today : code not already in alerted_today.json
 #    b. History Depth     : >= MIN_HISTORY_DAYS trading days of data
 #    c. Price Range       : MIN_PRICE <= Close <= MAX_PRICE
 #    d. Minimum Volume    : Volume > MIN_VOLUME
 #    e. Positive Candle   : today's Close > yesterday's Open
 #
-# 2. TECHNICAL SIGNALS (any one triggers an alert)
+# TECHNICAL SIGNALS (any one triggers an alert)
 #    - Price Up            : Close >= (1 + PRICE_UP_PCT) x Close from 2 days ago
 #    - Golden Cross (GC)   : MA50 crosses above MA200 (today MA50 > MA200,
 #                            yesterday MA50 <= MA200)
@@ -43,50 +52,51 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(me
 #    - Volume Surge        : Volume >= VOLUME_SURGE_MULT x 20-day avg Volume
 # =============================================================================
 
-MIN_PRICE = 0.205
-MAX_PRICE = 7.05
-MIN_VOLUME = 50_000
-MIN_HISTORY_DAYS = 250
+MIN_PRICE         = 0.205
+MAX_PRICE         = 7.05
+MIN_VOLUME        = 50_000
+MIN_HISTORY_DAYS  = 250
 
-PRICE_UP_PCT = 0.07          # 7% vs close 2 days ago
-HIGH_PROXIMITY = 0.995       # within 0.5% of 52WH / 2YH
+PRICE_UP_PCT      = 0.07     # 7% vs close 2 days ago
+HIGH_PROXIMITY    = 0.995    # within 0.5% of 52WH / 2YH
 VOLUME_SURGE_MULT = 2.0      # 2x 20-day average volume
-MA_FAST = 50
-MA_SLOW = 200
+MA_FAST           = 50
+MA_SLOW           = 200
 
-# Bursa trading window (MYT). Lunch break 12:30-14:30; the 12:45 run is
-# allowed so the morning-session close is captured.
-MYT = timezone(timedelta(hours=8))
-MARKET_OPEN = time(8, 15)
+# Bursa trading window (MYT)
+MYT          = timezone(timedelta(hours=8))
+MARKET_OPEN  = time(8, 15)
 MARKET_CLOSE = time(17, 0)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STOCKS_FILE = os.path.join(BASE_DIR, "Bursa_Malaysia.csv")
-DEDUP_FILE = os.path.join(BASE_DIR, "alerted_today.json")
-CACHE_FILE = os.path.join(BASE_DIR, "history_cache.csv")
+# EOD window: Yahoo Finance typically publishes EOD bars within 15 min
+# of market close. 17:00–20:00 MYT gives ample time.
+EOD_START = time(17, 0)
+EOD_END   = time(20, 0)
+
+BASE_DIR        = os.path.dirname(os.path.abspath(__file__))
+STOCKS_FILE     = os.path.join(BASE_DIR, "Bursa_Malaysia.csv")
+DEDUP_FILE      = os.path.join(BASE_DIR, "alerted_today.json")
+CACHE_FILE      = os.path.join(BASE_DIR, "history_cache.csv")
 CACHE_META_FILE = os.path.join(BASE_DIR, "cache_meta.json")
 
-# Fresh (non-cached) lookback window per run. 5 calendar days safely covers
-# the previous close plus today's bar even across long weekends, without
-# re-downloading the full 2y history every 30 minutes.
+# Fresh lookback per run. 5d safely covers the previous close plus today's
+# bar even across long weekends.
 FRESH_LOOKBACK_PERIOD = "5d"
 
 TELEGRAM_MAX_CHARS = 4096
 
 SIG_PRICE_UP = "Price Up"
-SIG_GC = "Golden Cross (GC)"
-SIG_52WH = "52-Week High (52WH)"
-SIG_2YH = "2-Year High (2YH)"
-SIG_VOL = "Volume Surge"
+SIG_GC       = "Golden Cross (GC)"
+SIG_52WH     = "52-Week High (52WH)"
+SIG_2YH      = "2-Year High (2YH)"
+SIG_VOL      = "Volume Surge"
 
 
 # =============================================================================
 # TICKER UNIVERSE
 # =============================================================================
 def _detect_delimiter(sample_line):
-    """The source file has switched between comma- and tab-separated at
-    least once already, so don't hardcode either -- sniff the first
-    non-blank line each run. Defaults to comma if neither is present."""
+    """Auto-detect comma or tab delimiter. Defaults to comma."""
     if "\t" in sample_line:
         return "\t"
     if "," in sample_line:
@@ -95,11 +105,8 @@ def _detect_delimiter(sample_line):
 
 
 def load_tickers():
-    """Reads Bursa_Malaysia.csv (no header row: code<sep>name) -> list of
-    {"code": "1015.KL", "name": "AMBANK"}. The name column in this file
-    carries a stray ".KL" suffix (e.g. "AMBANK.KL") which is stripped here
-    so alerts show the plain company name. Delimiter (comma or tab) is
-    auto-detected -- see _detect_delimiter()."""
+    """Reads Bursa_Malaysia.csv (no header: code<sep>name).
+    Strips stray '.KL' suffix from name column."""
     filename = os.path.basename(STOCKS_FILE)
     try:
         with open(STOCKS_FILE, "r", encoding="utf-8", newline="") as f:
@@ -112,7 +119,7 @@ def load_tickers():
             skipped = 0
             for row_num, row in enumerate(reader, start=1):
                 if not row or all(not cell.strip() for cell in row):
-                    continue  # blank line
+                    continue
                 if len(row) < 2:
                     logging.warning(f"⚠️ {filename} row {row_num}: expected 2 columns, got {row!r} — skipped.")
                     skipped += 1
@@ -126,7 +133,10 @@ def load_tickers():
                     skipped += 1
                     continue
                 data.append({"code": code, "name": name})
-        logging.info(f"✅ Loaded {len(data)} tickers from {filename}" + (f" ({skipped} row(s) skipped)" if skipped else ""))
+        logging.info(
+            f"✅ Loaded {len(data)} tickers from {filename}"
+            + (f" ({skipped} row(s) skipped)" if skipped else "")
+        )
         return data
     except FileNotFoundError:
         logging.error(f"❌ {STOCKS_FILE} not found!")
@@ -147,12 +157,24 @@ def get_bursa_tickers():
 # =============================================================================
 # SCHEDULE / HOLIDAY GUARD
 # =============================================================================
-_cur_year = datetime.now().year
+_cur_year   = datetime.now().year
 MY_HOLIDAYS = holidays.MY(years=[_cur_year - 1, _cur_year, _cur_year + 1])
 
 
+def is_eod_run(now=None):
+    """True when running in the EOD window (17:00–20:00 MYT)."""
+    now = now or datetime.now(MYT)
+    return EOD_START <= now.time() <= EOD_END
+
+
+def is_premarket_run(now=None):
+    """True when running before market open (00:00–08:14 MYT)."""
+    now = now or datetime.now(MYT)
+    return now.time() < MARKET_OPEN
+
+
 def should_run(now=None):
-    """Weekday, not a Malaysian public holiday, and inside trading hours."""
+    """Weekday, not a Malaysian public holiday, and inside trading OR EOD hours."""
     if os.getenv("FORCE_RUN") == "true" or "--force" in sys.argv:
         logging.info("💪 Force run enabled. Bypassing schedule/holiday checks.")
         return True
@@ -165,10 +187,52 @@ def should_run(now=None):
     if now.date() in MY_HOLIDAYS:
         logging.info(f"🎉 Malaysian public holiday ({MY_HOLIDAYS.get(now.date())}). Skipping scan.")
         return False
-    if not (MARKET_OPEN <= now.time() <= MARKET_CLOSE):
-        logging.info(f"⏰ {now.strftime('%H:%M')} MYT is outside trading hours. Skipping scan.")
+
+    in_market     = MARKET_OPEN <= now.time() <= MARKET_CLOSE
+    in_eod_window = EOD_START   <= now.time() <= EOD_END
+
+    if not (in_market or in_eod_window):
+        logging.info(
+            f"⏰ {now.strftime('%H:%M')} MYT is outside trading hours "
+            f"({MARKET_OPEN.strftime('%H:%M')}–{MARKET_CLOSE.strftime('%H:%M')}) "
+            f"and EOD window ({EOD_START.strftime('%H:%M')}–{EOD_END.strftime('%H:%M')}). "
+            "Skipping scan."
+        )
         return False
+
+    mode = "EOD" if in_eod_window else "INTRADAY"
+    logging.info(f"✅ Running in {mode} mode at {now.strftime('%H:%M')} MYT.")
     return True
+
+
+# =============================================================================
+# EXPECTED BAR DATE
+# =============================================================================
+def get_expected_date(now=None):
+    """
+    Returns the expected bar date string (YYYY-MM-DD) for this run.
+
+    Logic:
+      - INTRADAY (08:15–17:00): expect today's bar (may still be partial).
+      - EOD (17:00–20:00)     : expect today's completed bar.
+      - PRE-MARKET (<08:15)   : expect the most recent completed trading day
+                                (yesterday or last Friday, accounting for
+                                weekends and Malaysian public holidays).
+
+    This replaces the old hardcoded `today` check so EOD and pre-market
+    runs are not incorrectly skipped.
+    """
+    now = now or datetime.now(MYT)
+
+    # Intraday or EOD → today's bar
+    if now.time() >= MARKET_OPEN:
+        return now.strftime("%Y-%m-%d")
+
+    # Pre-market → last completed trading day
+    candidate = now.date() - timedelta(days=1)
+    while candidate.weekday() >= 5 or candidate in MY_HOLIDAYS:
+        candidate -= timedelta(days=1)
+    return candidate.strftime("%Y-%m-%d")
 
 
 # =============================================================================
@@ -237,11 +301,9 @@ def extract_ticker_df(df_all, ticker):
 # =============================================================================
 # HISTORY CACHE
 # =============================================================================
-# The last 2 years of OHLCV data for every ticker is static once a trading
-# day has closed. Re-downloading all of it 15x/day is wasteful, so it is
-# cached to disk and refreshed in full only once per calendar day. Every run
-# still fetches a small FRESH_LOOKBACK_PERIOD window per ticker so today's
-# price/volume is always live -- freshness every 30 minutes is unaffected.
+# The last 2 years of OHLCV for every ticker is cached to disk and refreshed
+# in full once per calendar day. Every run fetches a small FRESH_LOOKBACK_PERIOD
+# window per ticker so the latest price/volume is always current.
 CACHE_COLUMNS = ["Date", "Ticker", "Open", "High", "Low", "Close", "Volume"]
 
 
@@ -265,20 +327,32 @@ def cache_is_stale():
     return load_cache_meta().get("baseline_date") != get_today_str()
 
 
-def bulk_df_to_long(df_all, tickers):
-    """Flatten a bulk_download() MultiIndex frame into long format:
-    one row per (Date, Ticker). Rows dated today are dropped -- the baseline
-    cache must only ever hold fully-closed trading days."""
+def bulk_df_to_long(df_all, tickers, now=None):
+    """Flatten a bulk_download() MultiIndex frame into long format.
+
+    INTRADAY mode : excludes today's (possibly partial) bar from the baseline
+                    cache — today's data comes exclusively from the fresh window.
+    EOD mode      : includes today's completed bar in the cache so it persists
+                    for subsequent EOD/pre-market runs within the same calendar
+                    day without needing another full 2y download.
+    """
+    now  = now or datetime.now(MYT)
     today = get_today_str()
+
+    # In EOD/pre-market mode today's bar is complete — include it in cache.
+    # In intraday mode exclude it (bar is still forming).
+    exclude_today = MARKET_OPEN <= now.time() <= MARKET_CLOSE
+
     frames = []
     for ticker in tickers:
         df = extract_ticker_df(df_all, ticker)
         if df.empty:
             continue
         df = df.reset_index()
-        df = df.rename(columns={df.columns[0]: "Date"})  # index col, whatever its name
+        df = df.rename(columns={df.columns[0]: "Date"})
         df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
-        df = df[df["Date"] < today]  # exclude today's (possibly partial) bar
+        if exclude_today:
+            df = df[df["Date"] < today]
         if df.empty:
             continue
         df["Ticker"] = ticker
@@ -288,43 +362,50 @@ def bulk_df_to_long(df_all, tickers):
     return pd.concat(frames, ignore_index=True)
 
 
-def refresh_baseline_cache(tickers):
-    """Full 2y re-download for every ticker in the universe; overwrites the cache.
-    Runs once per calendar day (the first run after midnight MYT)."""
-    logging.info(f"🔄 Refreshing baseline cache for {len(tickers)} tickers (once-daily, full 2y)...")
-    df_all = bulk_download(tickers, period="2y")
-    long_df = bulk_df_to_long(df_all, tickers)
+def refresh_baseline_cache(tickers, now=None):
+    """Full 2y re-download for the entire universe; overwrites the cache.
+    Runs once per calendar day."""
+    now = now or datetime.now(MYT)
+    mode = "EOD" if is_eod_run(now) else "INTRADAY"
+    logging.info(
+        f"🔄 Refreshing baseline cache for {len(tickers)} tickers "
+        f"(once-daily, full 2y, {mode} mode)..."
+    )
+    df_all  = bulk_download(tickers, period="2y")
+    long_df = bulk_df_to_long(df_all, tickers, now=now)
     long_df.to_csv(CACHE_FILE, index=False)
     save_cache_meta(get_today_str())
-    logging.info(f"💾 Baseline cache written: {len(long_df)} rows across {long_df['Ticker'].nunique()} tickers.")
+    logging.info(
+        f"💾 Baseline cache written: {len(long_df)} rows across "
+        f"{long_df['Ticker'].nunique()} tickers."
+    )
     return long_df
 
 
 def load_baseline_cache():
-    """Returns {ticker: DataFrame(Date-indexed, Open/High/Low/Close/Volume)}."""
+    """Returns {ticker: DataFrame(Date-indexed, OHLCV)}."""
     if not os.path.exists(CACHE_FILE):
         return {}
-    long_df = pd.read_csv(CACHE_FILE, parse_dates=["Date"])
+    long_df  = pd.read_csv(CACHE_FILE, parse_dates=["Date"])
     baseline = {}
     for ticker, g in long_df.groupby("Ticker"):
-        baseline[ticker] = g.set_index("Date").sort_index()[["Open", "High", "Low", "Close", "Volume"]]
+        baseline[ticker] = (
+            g.set_index("Date").sort_index()[["Open", "High", "Low", "Close", "Volume"]]
+        )
     return baseline
 
 
 def build_full_history(baseline, fresh_df_all, ticker):
-    """Combine the cached static baseline with this run's fresh lookback window
-    for one ticker, returning a single ascending-date DataFrame ready for
-    passes_prefilter()/compute_signals() -- identical shape to a full 2y download."""
-    base = baseline.get(ticker, pd.DataFrame(columns=["Open", "High", "Low", "Close", "Volume"]))
+    """Combine cached baseline with this run's fresh window for one ticker.
+    Fresh data wins on any overlapping date."""
+    base  = baseline.get(ticker, pd.DataFrame(columns=["Open", "High", "Low", "Close", "Volume"]))
     fresh = extract_ticker_df(fresh_df_all, ticker)
     if fresh.empty:
         return base
-    fresh = fresh.copy()
+    fresh       = fresh.copy()
     fresh.index = pd.to_datetime(fresh.index)
-    # Fresh data wins on any overlapping date (e.g. cache built before today's
-    # close vs. an intraday partial bar) -- it is always the more current read.
-    combined = pd.concat([base, fresh])
-    combined = combined[~combined.index.duplicated(keep="last")].sort_index()
+    combined    = pd.concat([base, fresh])
+    combined    = combined[~combined.index.duplicated(keep="last")].sort_index()
     return combined
 
 
@@ -332,22 +413,22 @@ def build_full_history(baseline, fresh_df_all, ticker):
 # PRE-FILTER
 # =============================================================================
 def passes_prefilter(df, name, ticker):
-    """Returns (ok, reason). Conditions b–e; condition a (dedup) is applied in main()."""
+    """Returns (ok, reason). Condition a (dedup) is applied in main()."""
     # b. History depth
     if len(df) < MIN_HISTORY_DAYS:
         return False, f"only {len(df)} days of history (< {MIN_HISTORY_DAYS})"
 
-    latest = df.iloc[-1]
-    prev = df.iloc[-2]
-    close = float(latest["Close"])
-    volume = float(latest["Volume"])
+    latest   = df.iloc[-1]
+    prev     = df.iloc[-2]
+    close    = float(latest["Close"])
+    volume   = float(latest["Volume"])
     prev_open = float(prev["Open"])
 
     # c. Price range
     if not (MIN_PRICE <= close <= MAX_PRICE):
         return False, f"price {close:.3f} out of range ({MIN_PRICE}–{MAX_PRICE})"
 
-    # d. Minimum volume (strictly greater than)
+    # d. Minimum volume
     if volume <= MIN_VOLUME:
         return False, f"volume {volume:,.0f} <= {MIN_VOLUME:,.0f}"
 
@@ -366,16 +447,16 @@ def compute_signals(df):
     if len(df) < MIN_HISTORY_DAYS:
         return []
 
-    df = df.copy()
-    df["MA50"] = df["Close"].rolling(MA_FAST).mean()
+    df          = df.copy()
+    df["MA50"]  = df["Close"].rolling(MA_FAST).mean()
     df["MA200"] = df["Close"].rolling(MA_SLOW).mean()
-    # 20-day average volume EXCLUDING today's bar, so today's spike does not
-    # dilute its own benchmark (with today included, a 2x day only reads ~1.9x).
+    # 20-day avg volume excluding today's bar so today's spike does not
+    # dilute its own benchmark.
     df["Vol20"] = df["Volume"].shift(1).rolling(20).mean()
 
     latest = df.iloc[-1]
-    prev = df.iloc[-2]
-    close = float(latest["Close"])
+    prev   = df.iloc[-2]
+    close  = float(latest["Close"])
     signals = []
 
     # Price Up: >= 7% above close 2 days ago
@@ -385,9 +466,14 @@ def compute_signals(df):
             signals.append(SIG_PRICE_UP)
 
     # Golden Cross: MA50 crosses above MA200 today
-    if not pd.isna(latest["MA50"]) and not pd.isna(latest["MA200"]) \
-            and not pd.isna(prev["MA50"]) and not pd.isna(prev["MA200"]):
-        if float(latest["MA50"]) > float(latest["MA200"]) and float(prev["MA50"]) <= float(prev["MA200"]):
+    if (
+        not pd.isna(latest["MA50"])  and not pd.isna(latest["MA200"])
+        and not pd.isna(prev["MA50"]) and not pd.isna(prev["MA200"])
+    ):
+        if (
+            float(latest["MA50"]) > float(latest["MA200"])
+            and float(prev["MA50"]) <= float(prev["MA200"])
+        ):
             signals.append(SIG_GC)
 
     # 52-Week High
@@ -395,14 +481,18 @@ def compute_signals(df):
     if high_52w > 0 and close >= high_52w * HIGH_PROXIMITY:
         signals.append(SIG_52WH)
 
-    # 2-Year High (full 2y download window)
+    # 2-Year High
     high_2y = float(df["High"].max())
     if high_2y > 0 and close >= high_2y * HIGH_PROXIMITY:
         signals.append(SIG_2YH)
 
     # Volume Surge: >= 2x 20-day average
     vol20 = latest["Vol20"]
-    if not pd.isna(vol20) and float(vol20) > 0 and float(latest["Volume"]) >= float(vol20) * VOLUME_SURGE_MULT:
+    if (
+        not pd.isna(vol20)
+        and float(vol20) > 0
+        and float(latest["Volume"]) >= float(vol20) * VOLUME_SURGE_MULT
+    ):
         signals.append(SIG_VOL)
 
     return signals
@@ -411,11 +501,11 @@ def compute_signals(df):
 def analyze(ticker):
     """Single-ticker analysis (kept for test_setup.py compatibility)."""
     try:
-        df = get_history(ticker)
-        ok, _ = passes_prefilter(df, ticker, ticker)
+        df       = get_history(ticker)
+        ok, _    = passes_prefilter(df, ticker, ticker)
         if not ok:
             return None
-        signals = compute_signals(df)
+        signals  = compute_signals(df)
         return {"signals": signals} if signals else None
     except Exception as e:
         logging.error(f"Error analyzing {ticker}: {e}")
@@ -426,14 +516,14 @@ def analyze(ticker):
 # TELEGRAM
 # =============================================================================
 def send_telegram(message):
-    token = (os.getenv("BOT_TOKEN") or "").strip().strip('"').strip("'")
-    chat_id = (os.getenv("CHAT_ID") or "").strip().strip('"').strip("'")
+    token   = (os.getenv("BOT_TOKEN") or "").strip().strip('"').strip("'")
+    chat_id = (os.getenv("CHAT_ID")   or "").strip().strip('"').strip("'")
     if not token or not chat_id:
         logging.warning("⚠️ Telegram credentials missing (BOT_TOKEN / CHAT_ID).")
         return False
 
     def _post(target_chat_id):
-        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        url     = f"https://api.telegram.org/bot{token}/sendMessage"
         payload = {"chat_id": target_chat_id, "text": message, "parse_mode": "HTML"}
         return requests.post(url, data=payload, timeout=20)
 
@@ -443,7 +533,7 @@ def send_telegram(message):
             return True
 
         resp_json = r.json() if r.content else {}
-        desc = str(resp_json.get("description", ""))
+        desc      = str(resp_json.get("description", ""))
 
         if "chat not found" in desc.lower() and not chat_id.startswith("-"):
             fallbacks = [f"-{chat_id}"]
@@ -484,32 +574,22 @@ def send_telegram(message):
 
 
 def format_results(results, run_time=None):
-    """Per-stock block alert, split into <=4096-char chunks.
-
-    📊 Bursa Scanner — 2026-09-07 10:45 MYT
-
-    <b>AMBANK (1015)</b>
-    Current: RM 6.88
-    Signals detected:
-     - Price Up
-     - 52-Week High (52WH)
-
-    <b>ABMB (2488)</b>
-    Current: RM 4.98
-    Signals detected:
-     - 52-Week High (52WH)
-    """
+    """Per-stock block alert, split into <=4096-char chunks."""
     if not results:
         return []
 
     run_time = run_time or datetime.now(MYT)
-    header = f"<b>📊 Bursa Scanner — {run_time.strftime('%Y-%m-%d %H:%M')} MYT</b>\n\n"
+    mode_tag = " [EOD]" if is_eod_run(run_time) else ""
+    header   = (
+        f"<b>📊 Bursa Scanner{mode_tag} — "
+        f"{run_time.strftime('%Y-%m-%d %H:%M')} MYT</b>\n\n"
+    )
 
     entries = []
     for r in results:
-        code = r["ticker"].split(".")[0]
-        name = html.escape(r["name"])
-        price = r["price"]
+        code      = r["ticker"].split(".")[0]
+        name      = html.escape(r["name"])
+        price     = r["price"]
         price_str = f"{price:.2f}" if abs(price - round(price, 2)) < 1e-5 else f"{price:.3f}"
         sig_lines = "\n".join(f" - {sig}" for sig in r["signals"])
         entry = (
@@ -522,7 +602,7 @@ def format_results(results, run_time=None):
 
     messages, chunk, cur_len = [], [], len(header)
     for entry in entries:
-        entry_len = len(entry) + 2  # +2 for the blank-line separator between entries
+        entry_len = len(entry) + 2
         if chunk and cur_len + entry_len > TELEGRAM_MAX_CHARS - 50:
             messages.append(header + "\n\n".join(chunk))
             chunk, cur_len = [entry], len(header) + entry_len
@@ -540,20 +620,28 @@ def format_results(results, run_time=None):
 def main():
     logging.info("🤖 Starting Bursa Scanner...")
 
-    if not should_run():
-        logging.info("⏹️ Skipped (weekend / holiday / outside trading hours).")
+    now = datetime.now(MYT)
+
+    if not should_run(now):
+        logging.info("⏹️ Skipped (weekend / holiday / outside trading & EOD hours).")
         return
     if not STOCKS:
         logging.error("❌ No stocks loaded. Exiting.")
         return
 
-    # Baseline history cache: full 2y re-download once per calendar day for the
-    # WHOLE universe (not just today's remaining stocks -- tomorrow needs all
-    # of them again). Every other run of the day reuses this on disk.
+    # Determine which bar date this run should expect
+    expected_date = get_expected_date(now)
+    eod_mode      = is_eod_run(now)
+    logging.info(
+        f"📅 Expected bar date: {expected_date} "
+        f"({'EOD' if eod_mode else 'INTRADAY'} mode)"
+    )
+
+    # Baseline history cache: full 2y re-download once per calendar day.
     all_tickers = get_bursa_tickers()
     if cache_is_stale():
         try:
-            refresh_baseline_cache(all_tickers)
+            refresh_baseline_cache(all_tickers, now=now)
         except Exception as e:
             logging.error(f"❌ Baseline cache refresh failed: {e}")
             if not os.path.exists(CACHE_FILE):
@@ -570,7 +658,7 @@ def main():
     logging.info(f"📋 {len(alerted_set)} stock(s) already alerted today.")
 
     stocks_to_scan = [s for s in STOCKS if s.get("code") and s["code"] not in alerted_set]
-    skipped = len(STOCKS) - len(stocks_to_scan)
+    skipped        = len(STOCKS) - len(stocks_to_scan)
     if skipped:
         logging.info(f"⏳ {skipped} stock(s) skipped — already alerted today.")
     if not stocks_to_scan:
@@ -586,8 +674,7 @@ def main():
         return
 
     results = []
-    stats = {"no_data": 0, "stale": 0, "prefilter": 0, "no_signal": 0, "error": 0}
-    today = get_today_str()
+    stats   = {"no_data": 0, "stale": 0, "prefilter": 0, "no_signal": 0, "error": 0}
 
     for stock in stocks_to_scan:
         ticker, name = stock["code"], stock.get("name", stock["code"])
@@ -598,15 +685,20 @@ def main():
                 logging.info(f"📊 {name} ({ticker}): no data, skip.")
                 continue
 
-            # If the fresh fetch failed for this ticker (rate limit, transient
-            # error, or Yahoo hasn't posted today's bar yet), df's latest row
-            # is still yesterday's. Evaluating it as if it were "today" would
-            # silently re-run yesterday's already-seen numbers -- skip instead
-            # and let a later run (this ticker will very likely succeed next
-            # time) pick it up with genuinely fresh data.
-            if df.index.max().strftime("%Y-%m-%d") != today:
+            # Check that the latest bar matches the expected date for this run mode.
+            # - INTRADAY: today's bar must be present (may still be partial but
+            #   that is intentional — we want live prices).
+            # - EOD: today's completed bar must be present. If Yahoo hasn't
+            #   published it yet (usually within 15 min of close), skip and
+            #   retry on the next scheduled run.
+            # - PRE-MARKET: yesterday's (or last trading day's) bar is enough.
+            latest_date = df.index.max().strftime("%Y-%m-%d")
+            if latest_date != expected_date:
                 stats["stale"] += 1
-                logging.info(f"🕒 {name} ({ticker}): no fresh bar for today yet, skip this run.")
+                logging.info(
+                    f"🕒 {name} ({ticker}): latest bar {latest_date} != "
+                    f"expected {expected_date}, skip this run."
+                )
                 continue
 
             ok, reason = passes_prefilter(df, name, ticker)
@@ -622,19 +714,21 @@ def main():
                 continue
 
             results.append({
-                "ticker": ticker,
-                "name": name,
-                "price": float(df.iloc[-1]["Close"]),
+                "ticker":  ticker,
+                "name":    name,
+                "price":   float(df.iloc[-1]["Close"]),
                 "signals": signals,
             })
             logging.info(f"✅ {name} ({ticker}): {' | '.join(signals)}")
+
         except Exception as e:
             stats["error"] += 1
             logging.error(f"❌ {name} ({ticker}): {e}")
 
     logging.info(
-        f"Scan done. {len(results)} hit(s) | no_data={stats['no_data']} stale={stats['stale']} "
-        f"prefilter={stats['prefilter']} no_signal={stats['no_signal']} error={stats['error']}"
+        f"Scan done. {len(results)} hit(s) | no_data={stats['no_data']} "
+        f"stale={stats['stale']} prefilter={stats['prefilter']} "
+        f"no_signal={stats['no_signal']} error={stats['error']}"
     )
 
     if not results:
@@ -642,7 +736,7 @@ def main():
         return
 
     results.sort(key=lambda x: x["ticker"])
-    messages = format_results(results)
+    messages = format_results(results, run_time=now)
     logging.info(f"📨 Sending {len(messages)} message(s) for {len(results)} stock(s)...")
 
     all_sent = True
